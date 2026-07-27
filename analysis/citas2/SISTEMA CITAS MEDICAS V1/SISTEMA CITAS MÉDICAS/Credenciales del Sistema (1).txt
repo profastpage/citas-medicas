@@ -1,0 +1,4 @@
+Credenciales del Sistema
+
+usuario: admin@medico.com
+contraseña: Xvito2013$

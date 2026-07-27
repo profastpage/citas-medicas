@@ -1,0 +1,117 @@
+// MenuPro — Prisma Schema (refleja las tablas de Supabase)
+// Nota: En producción, la DB es Supabase (Postgres).
+// Este schema se usa solo para desarrollo local con SQLite si no hay Supabase.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Profiles (1:1 con auth.users de Supabase) ──
+model Profile {
+  id                  String   @id // UUID de auth.users
+  email               String
+  fullName            String?  @map("full_name")
+  avatarUrl           String?  @map("avatar_url")
+  plan                String   @default("free")
+  mpPreapprovalId     String?  @map("mp_preapproval_id")
+  mpStatus            String?  @map("mp_status")
+  currentPeriodEnd    DateTime? @map("current_period_end")
+  bgRemovalsUsed      Int      @default(0) @map("bg_removals_used")
+  bgRemovalsResetAt   DateTime @default(now()) @map("bg_removals_reset_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  menus               Menu[]
+  customDomains        CustomDomain[]
+}
+
+// ── Menus ──
+model Menu {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  name          String
+  slug          String
+  slogan        String?
+  description   String?
+  whatsapp      String   @default("")
+  logoUrl       String?  @map("logo_url")
+  color         String   @default("#ff6b35")
+  currency      String   @default("S/")
+  brandingText  String   @default("Creado con MenuPro") @map("branding_text")
+  isPublished   Boolean  @default(false) @map("is_published")
+  viewsCount    Int      @default(0) @map("views_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  user          Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories    Category[]
+  menuViews     MenuView[]
+  customDomains  CustomDomain[]
+
+  @@index([userId])
+  @@index([slug])
+  @@unique([userId, slug])
+}
+
+// ── Categories ──
+model Category {
+  id        String   @id @default(cuid())
+  menuId    String   @map("menu_id")
+  name      String
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  dishes    Dish[]
+
+  @@index([menuId])
+}
+
+// ── Dishes ──
+model Dish {
+  id          String   @id @default(cuid())
+  categoryId  String   @map("category_id")
+  name        String
+  description String?
+  price       Float    @default(0)
+  imageUrl    String?  @map("image_url")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+}
+
+// ── Menu Views (analytics) ──
+model MenuView {
+  id        String   @id @default(cuid())
+  menuId    String   @map("menu_id")
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@index([menuId])
+}
+
+// ── Custom Domains (solo Pro) ──
+model CustomDomain {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  menuId           String?   @map("menu_id")
+  domain           String
+  isVerified       Boolean   @default(false) @map("is_verified")
+  verificationToken String   @map("verification_token")
+  dnsCheckedAt     DateTime? @map("dns_checked_at")
+  sslStatus        String    @default("pending") @map("ssl_status")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  user             Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  menu             Menu?     @relation(fields: [menuId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([domain])
+  @@unique([domain])
+}

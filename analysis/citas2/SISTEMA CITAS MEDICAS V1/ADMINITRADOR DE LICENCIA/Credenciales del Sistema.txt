@@ -1,0 +1,4 @@
+Credenciales del Sistema
+
+usuario: admin@licencias.com
+contraseña: Sistemas2025

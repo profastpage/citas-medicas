@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador Premium · Menús Digitales</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg-0: #07070b;
+    --bg-1: #0f0f1a;
+    --bg-2: #15152a;
+    --glass: rgba(255,255,255,0.035);
+    --glass-strong: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text: #f4f4fa;
+    --text-muted: #8a8a9a;
+    --text-soft: #b8b8c8;
+    --accent: #d4af37;
+    --accent-soft: rgba(212,175,55,0.15);
+    --danger: #e63946;
+    --success: #06d6a0;
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-0);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    filter: blur(140px);
+    opacity: 0.18;
+    z-index: 0;
+    pointer-events: none;
+  }
+  body::before {
+    background: var(--accent);
+    top: -250px; right: -200px;
+  }
+  body::after {
+    background: #6b46c1;
+    bottom: -250px; left: -200px;
+  }
+
+  .app-shell { position: relative; z-index: 1; }
+
+  /* Header */
+  .gen-header {
+    padding: 22px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: rgba(7,7,11,0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .gen-brand {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .gen-logo {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #f4d35e);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800;
+    color: #1a1a2e;
+    box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+  }
+  .gen-brand h1 {
+    font-size: 17px; font-weight: 700; letter-spacing: -0.3px;
+  }
+  .gen-brand p {
+    font-size: 12px; color: var(--text-muted); margin-top: 1px;
+  }
+  .preview-toggle {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    display: none;
+    align-items: center; gap: 7px;
+    transition: all 0.2s;
+  }
+  .preview-toggle:hover { background: var(--glass-strong); }
+
+  /* Main layout */
+  .gen-main {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 24px;
+    padding: 28px;
+    max-width: 1500px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  /* Form pane */
+  .form-pane { display: flex; flex-direction: column; gap: 18px; max-width: 720px; width: 100%; }
+
+  /* Card */
+  .card {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-soft), transparent);
+  }
+  .card-head {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 22px;
+  }
+  .card-num {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), #f4d35e);
+    color: #1a1a2e;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800;
+    box-shadow: 0 4px 12px rgba(212,175,55,0.25);
+  }
+  .card-head h2 {
+    font-size: 17px; font-weight: 700; letter-spacing: -0.2px;
+  }
+  .card-body { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Field */
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field label {
+    font-size: 12.5px;
+    color: var(--text-soft);
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .field label .req { color: var(--accent); }
+  .field .hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(0,0,0,0.5);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.1);
+  }
+  .field input::placeholder, .field textarea::placeholder {
+    color: rgba(255,255,255,0.25);
+  }
+  .field textarea { resize: vertical; min-height: 76px; }
+  .field select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a9a' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  .field select option { background: var(--bg-1); color: var(--text); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* Colors */
+  .colors {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+  .color-swatch {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .color-swatch:hover { transform: scale(1.08); }
+  .color-swatch.selected {
+    border-color: var(--accent);
+    transform: scale(1.05);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  .color-swatch.selected::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    background: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='20 6 9 17 4 12'/%3e%3c/svg%3e") no-repeat center;
+    background-size: 16px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+  }
+
+  /* Image input (logo) */
+  .image-input {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .image-preview-area {
+    position: relative;
+    width: 120px; height: 120px;
+    border-radius: 14px;
+    background: rgba(0,0,0,0.3);
+    border: 2px dashed var(--border-strong);
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .image-preview-area:hover {
+    border-color: var(--accent);
+    background: rgba(212,175,55,0.05);
+  }
+  .image-preview-area.has-image {
+    border-style: solid;
+    border-color: var(--border);
+  }
+  .image-preview-area.drag-over {
+    border-color: var(--accent);
+    background: rgba(212,175,55,0.15);
+    transform: scale(1.02);
+  }
+  .image-placeholder {
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .image-placeholder-icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+  .image-placeholder-text {
+    font-size: 12px; font-weight: 600;
+    color: var(--text-soft);
+  }
+  .image-placeholder-hint {
+    font-size: 10px; margin-top: 2px;
+    color: var(--text-muted);
+  }
+  .image-preview-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .image-preview-area.has-image .image-preview-img { display: block; }
+  .image-preview-area.has-image .image-placeholder { display: none; }
+  .image-remove {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    transition: background 0.2s;
+  }
+  .image-preview-area.has-image .image-remove { display: flex; }
+  .image-remove:hover { background: var(--danger); }
+  .image-url-input {
+    width: 100%;
+    padding: 9px 12px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+  }
+  .image-url-input:focus { outline: none; border-color: var(--accent); }
+  .image-url-input::placeholder { color: rgba(255,255,255,0.25); }
+
+  /* Categories */
+  .category {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .category:hover { border-color: var(--border-strong); }
+  .category-head {
+    display: flex; gap: 10px; margin-bottom: 14px;
+  }
+  .category-head input {
+    flex: 1;
+    padding: 11px 14px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px; font-weight: 600;
+    font-family: inherit;
+  }
+  .category-head input:focus { outline: none; border-color: var(--accent); }
+  .category-head input::placeholder { color: rgba(255,255,255,0.25); font-weight: 500; }
+  .btn-icon {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-icon:hover { background: var(--glass-strong); }
+  .btn-icon.danger:hover { background: rgba(230,57,70,0.18); border-color: var(--danger); color: var(--danger); }
+  .dishes { display: flex; flex-direction: column; gap: 10px; }
+
+  /* Dish row */
+  .dish-row {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    transition: border-color 0.2s;
+  }
+  .dish-row:hover { border-color: var(--border-strong); }
+  .dish-thumb {
+    width: 64px; height: 64px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.4);
+    border: 1.5px dashed var(--border-strong);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .dish-thumb:hover {
+    border-color: var(--accent);
+    background: rgba(212,175,55,0.08);
+  }
+  .dish-thumb.has-image {
+    border-style: solid;
+    border-color: var(--border);
+  }
+  .dish-thumb.drag-over {
+    border-color: var(--accent);
+    background: rgba(212,175,55,0.15);
+    transform: scale(1.04);
+  }
+  .dish-thumb-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .dish-thumb.has-image .dish-thumb-img { display: block; }
+  .dish-thumb.has-image .dish-thumb-placeholder { display: none; }
+  .dish-thumb-placeholder {
+    color: var(--text-muted);
+    font-size: 22px; font-weight: 300;
+    line-height: 1;
+  }
+  .dish-thumb-remove {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px; line-height: 1;
+  }
+  .dish-thumb.has-image .dish-thumb-remove { display: flex; }
+  .dish-thumb-remove:hover { background: var(--danger); }
+  .dish-fields {
+    display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  }
+  .dish-fields input {
+    padding: 8px 11px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    width: 100%;
+  }
+  .dish-fields input:focus { outline: none; border-color: var(--accent); }
+  .dish-fields input::placeholder { color: rgba(255,255,255,0.25); }
+  .dish-bottom {
+    display: grid;
+    grid-template-columns: 110px 1fr 32px;
+    gap: 6px;
+  }
+  .price-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .price-wrap .currency-display {
+    position: absolute;
+    left: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    pointer-events: none;
+    font-weight: 600;
+  }
+  .price-wrap input { padding-left: 32px !important; }
+
+  .btn-add-dish, .btn-add-cat {
+    background: rgba(212,175,55,0.1);
+    border: 1px dashed rgba(212,175,55,0.4);
+    color: var(--accent);
+    padding: 11px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 6px;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-add-dish:hover, .btn-add-cat:hover {
+    background: rgba(212,175,55,0.2);
+    border-color: var(--accent);
+  }
+
+  .size-estimate {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 9px 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .size-estimate.warning {
+    color: #fbbf24;
+    border-color: rgba(251,191,36,0.3);
+    background: rgba(251,191,36,0.08);
+  }
+
+  .btn-generate {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), #f4d35e);
+    color: #1a1a2e;
+    border: none;
+    padding: 17px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 6px 24px rgba(212,175,55,0.3);
+    letter-spacing: 0.3px;
+    font-family: inherit;
+  }
+  .btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 32px rgba(212,175,55,0.45);
+  }
+  .btn-generate:active { transform: translateY(0); }
+
+  /* Preview pane */
+  .preview-pane {
+    position: sticky;
+    top: 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: calc(100vh - 110px);
+  }
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .preview-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600;
+    color: var(--text-soft);
+  }
+  .preview-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .preview-device {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 16px;
+    font-weight: 600;
+  }
+  .preview-frame-wrap {
+    flex: 1;
+    background: #000;
+    border-radius: 24px;
+    border: 1px solid var(--border-strong);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+  }
+  .preview-frame-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100px; height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 0 0 6px 6px;
+    z-index: 10;
+  }
+  #previewFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #07070b;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(140px);
+    background: var(--success);
+    color: #fff;
+    padding: 13px 22px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+  }
+  .toast.visible { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--danger); }
+
+  /* Mobile */
+  @media (max-width: 1023px) {
+    .gen-main { grid-template-columns: 1fr; padding: 18px; }
+    .preview-toggle { display: inline-flex; }
+    .preview-pane {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--bg-0);
+      height: 100vh;
+      padding: 70px 16px 16px;
+      top: 0;
+    }
+    .preview-pane.mobile-visible { display: flex; }
+    .preview-pane .close-preview {
+      position: absolute;
+      top: 18px; right: 18px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+  }
+  @media (min-width: 1024px) {
+    .preview-pane .close-preview { display: none; }
+  }
+  @media (max-width: 600px) {
+    .row { grid-template-columns: 1fr; }
+    .colors { grid-template-columns: repeat(3, 1fr); }
+    .dish-bottom { grid-template-columns: 95px 1fr 30px; }
+    .gen-header { padding: 16px 18px; }
+    .gen-brand h1 { font-size: 15px; }
+    .gen-brand p { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="gen-header">
+    <div class="gen-brand">
+      <div class="gen-logo">M</div>
+      <div>
+        <h1>Generador Premium</h1>
+        <p>Menús digitales profesionales con WhatsApp</p>
+      </div>
+    </div>
+    <button class="preview-toggle" id="previewToggle">Vista previa</button>
+  </header>
+
+  <main class="gen-main">
+    <section class="form-pane" id="formPane">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">1</span>
+          <h2>Información del restaurante</h2>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>Nombre del restaurante <span class="req">*</span></label>
+            <input type="text" id="rName" placeholder="Ej: La Parrilla del Chef">
+          </div>
+          <div class="field">
+            <label>Slogan (opcional)</label>
+            <input type="text" id="rSlogan" placeholder="Ej: Cocina de autor desde 1998" maxlength="60">
+          </div>
+          <div class="field">
+            <label>Descripción</label>
+            <textarea id="rDesc" placeholder="Ej: Auténtica cocina peruana con ingredientes frescos del mercado"></textarea>
+          </div>
+          <div class="field">
+            <label>Número de WhatsApp con código de país <span class="req">*</span></label>
+            <input type="text" id="rWhatsapp" placeholder="51987654321">
+            <div class="hint">Solo dígitos, sin + ni espacios. 51=Perú, 34=España, 52=México, 57=Colombia, 54=Argentina</div>
+          </div>
+          <div class="field">
+            <label>Logo del restaurante</label>
+            <div class="image-input" id="logoInput">
+              <div class="image-preview-area" id="logoPreview">
+                <div class="image-placeholder">
+                  <div class="image-placeholder-icon">📷</div>
+                  <div class="image-placeholder-text">Subir logo</div>
+                  <div class="image-placeholder-hint">Click o arrastra aquí</div>
+                </div>
+                <img class="image-preview-img" id="logoImg" alt="">
+                <button type="button" class="image-remove" id="logoRemove" title="Quitar imagen">×</button>
+              </div>
+              <input type="text" class="image-url-input" id="logoUrlInput" placeholder="o pega una URL de imagen">
+              <input type="hidden" id="rLogo" value="">
+              <input type="file" accept="image/*" id="logoFile" hidden>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Moneda</label>
+              <select id="rCurrency">
+                <option value="S/">S/ Soles (Perú)</option>
+                <option value="$">$ Dólares</option>
+                <option value="€">€ Euros</option>
+                <option value="Bs">Bs Bolivianos</option>
+                <option value="₲">₲ Guaraníes</option>
+                <option value="AR$">AR$ Pesos Arg</option>
+                <option value="$U">$U Pesos Uru</option>
+                <option value="CLP$">CLP$ Pesos Chilenos</option>
+                <option value="MX$">MX$ Pesos Mexicanos</option>
+                <option value="R$">R$ Reales</option>
+                <option value="¥">¥ Yenes</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Color principal</label>
+              <div class="colors" id="colors"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">2</span>
+          <h2>Categorías y platos</h2>
+        </div>
+        <div class="card-body">
+          <div id="categories"></div>
+          <button class="btn-add-cat" onclick="addCategory()">+ Agregar categoría</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">3</span>
+          <h2>Generar menú</h2>
+        </div>
+        <div class="card-body">
+          <div class="size-estimate" id="sizeEstimate">Tamaño estimado: — KB</div>
+          <button class="btn-generate" onclick="generateMenu()">Generar Menú Digital</button>
+        </div>
+      </div>
+
+    </section>
+
+    <aside class="preview-pane" id="previewPane">
+      <button class="close-preview" id="closePreview">×</button>
+      <div class="preview-header">
+        <div class="preview-status">
+          <span class="preview-dot"></span>
+          <span id="previewStatus">Vista previa en vivo</span>
+        </div>
+        <div class="preview-device">Mobile · 380px</div>
+      </div>
+      <div class="preview-frame-wrap">
+        <iframe id="previewFrame" srcdoc="" title="Vista previa del menú"></iframe>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG ============ */
+var COLORS = [
+  { hex: '#ff6b35', name: 'Naranja Vibrante' },
+  { hex: '#e63946', name: 'Rojo Premium' },
+  { hex: '#06d6a0', name: 'Verde Esmeralda' },
+  { hex: '#118ab2', name: 'Azul Profundo' },
+  { hex: '#9d4edd', name: 'Morado Real' },
+  { hex: '#d4af37', name: 'Dorado Champagne' }
+];
+var selectedColor = COLORS[0].hex;
+
+/* ============ UTILS ============ */
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function showToast(msg, isError) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '') + ' visible';
+  setTimeout(function() { t.className = 'toast' + (isError ? ' error' : ''); }, 3000);
+}
+function hexToRgbStr(hex) {
+  var r = parseInt(hex.substr(1,2), 16);
+  var g = parseInt(hex.substr(3,2), 16);
+  var b = parseInt(hex.substr(5,2), 16);
+  return r + ', ' + g + ', ' + b;
+}
+function debounce(fn, ms) {
+  var t = null;
+  return function() {
+    var ctx = this, args = arguments;
+    if (t) clearTimeout(t);
+    t = setTimeout(function() { fn.apply(ctx, args); }, ms);
+  };
+}
+
+/* ============ IMAGE COMPRESSION ============ */
+function compressImage(file, maxDim, quality, callback) {
+  if (!file || !file.type || !file.type.startsWith('image/')) {
+    showToast('Solo se permiten imágenes', true);
+    return;
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    showToast('Imagen demasiado grande (máx 15MB)', true);
+    return;
+  }
+  var reader = new FileReader();
+  reader.onerror = function() { showToast('Error al leer imagen', true); };
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onerror = function() { showToast('Imagen inválida', true); };
+    img.onload = function() {
+      try {
+        var canvas = document.createElement('canvas');
+        var w = img.width, h = img.height;
+        if (w > h) {
+          if (w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+        } else {
+          if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        var isPng = file.type === 'image/png';
+        var dataUrl;
+        if (isPng && file.size < 250 * 1024) {
+          dataUrl = canvas.toDataURL('image/png');
+        } else {
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+        callback(dataUrl);
+      } catch (err) {
+        showToast('Error al procesar imagen', true);
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============ COLOR PICKER ============ */
+function renderColors() {
+  var container = document.getElementById('colors');
+  var html = '';
+  COLORS.forEach(function(c) {
+    var sel = c.hex === selectedColor ? ' selected' : '';
+    html += '<div class="color-swatch' + sel + '" style="background:' + c.hex + '" data-color="' + c.hex + '" title="' + escapeHtml(c.name) + '"></div>';
+  });
+  container.innerHTML = html;
+  container.querySelectorAll('.color-swatch').forEach(function(el) {
+    el.addEventListener('click', function() {
+      selectedColor = this.dataset.color;
+      renderColors();
+      schedulePreviewUpdate();
+      updateSizeEstimate();
+    });
+  });
+}
+
+/* ============ LOGO INPUT ============ */
+function setupLogoInput() {
+  var preview = document.getElementById('logoPreview');
+  var fileInput = document.getElementById('logoFile');
+  var img = document.getElementById('logoImg');
+  var removeBtn = document.getElementById('logoRemove');
+  var urlInput = document.getElementById('logoUrlInput');
+  var hidden = document.getElementById('rLogo');
+
+  preview.addEventListener('click', function(e) {
+    if (e.target === removeBtn) return;
+    fileInput.click();
+  });
+  fileInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      compressImage(this.files[0], 300, 0.9, function(dataUrl) {
+        hidden.value = dataUrl;
+        img.src = dataUrl;
+        preview.classList.add('has-image');
+        urlInput.value = '';
+        schedulePreviewUpdate();
+        updateSizeEstimate();
+        showToast('Logo cargado');
+      });
+    }
+  });
+  urlInput.addEventListener('input', function() {
+    var url = this.value.trim();
+    if (url) {
+      hidden.value = url;
+      img.src = url;
+      preview.classList.add('has-image');
+    } else {
+      hidden.value = '';
+      img.src = '';
+      preview.classList.remove('has-image');
+    }
+    schedulePreviewUpdate();
+    updateSizeEstimate();
+  });
+  removeBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    hidden.value = '';
+    img.src = '';
+    urlInput.value = '';
+    fileInput.value = '';
+    preview.classList.remove('has-image');
+    schedulePreviewUpdate();
+    updateSizeEstimate();
+  });
+  // Drag & drop
+  preview.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    preview.classList.add('drag-over');
+  });
+  preview.addEventListener('dragleave', function() {
+    preview.classList.remove('drag-over');
+  });
+  preview.addEventListener('drop', function(e) {
+    e.preventDefault();
+    preview.classList.remove('drag-over');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    }
+  });
+}
+
+/* ============ CATEGORIES & DISHES ============ */
+var categoryCounter = 0;
+
+function addCategory(name) {
+  var id = 'cat_' + (categoryCounter++);
+  var wrap = document.createElement('div');
+  wrap.className = 'category';
+  wrap.id = id;
+  wrap.innerHTML =
+    '<div class="category-head">' +
+      '<input type="text" class="cat-name" placeholder="Nombre de categoría (Ej: Entradas)">' +
+      '<button class="btn-icon danger" onclick="removeElement(\'' + id + '\')" title="Eliminar categoría">×</button>' +
+    '</div>' +
+    '<div class="dishes"></div>' +
+    '<button class="btn-add-dish" onclick="addDish(\'' + id + '\')">+ Agregar plato</button>';
+  document.getElementById('categories').appendChild(wrap);
+  if (name) wrap.querySelector('.cat-name').value = name;
+  addDish(id);
+  // Attach listeners
+  wrap.querySelectorAll('input').forEach(function(inp) {
+    inp.addEventListener('input', function() { schedulePreviewUpdate(); updateSizeEstimate(); });
+  });
+  return id;
+}
+
+function addDish(catId) {
+  var cat = document.getElementById(catId);
+  var dishes = cat.querySelector('.dishes');
+  var id = 'dish_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+  var row = document.createElement('div');
+  row.className = 'dish-row';
+  row.id = id;
+  row.innerHTML =
+    '<div class="dish-thumb">' +
+      '<img class="dish-thumb-img" alt="">' +
+      '<div class="dish-thumb-placeholder">+</div>' +
+      '<button type="button" class="dish-thumb-remove" title="Quitar imagen">×</button>' +
+      '<input type="file" accept="image/*" class="dish-file-input" hidden>' +
+    '</div>' +
+    '<div class="dish-fields">' +
+      '<input type="text" class="d-name" placeholder="Nombre del plato">' +
+      '<input type="text" class="d-desc" placeholder="Descripción (opcional)">' +
+      '<div class="dish-bottom">' +
+        '<div class="price-wrap">' +
+          '<span class="currency-display" id="curr_' + id + '">S/</span>' +
+          '<input type="number" class="d-price" placeholder="0.00" step="0.10" min="0">' +
+        '</div>' +
+        '<input type="text" class="d-url" placeholder="URL imagen (opcional)">' +
+        '<button type="button" class="btn-icon danger" onclick="removeElement(\'' + id + '\')" title="Eliminar plato" style="height:32px;width:32px;font-size:14px;">×</button>' +
+      '</div>' +
+      '<input type="hidden" class="d-img" value="">' +
+    '</div>';
+  dishes.appendChild(row);
+  // Update currency display
+  updateCurrencyDisplays();
+  // Setup image upload
+  setupDishImage(row);
+  // Attach input listeners for preview
+  row.querySelectorAll('input:not([type=file])').forEach(function(inp) {
+    inp.addEventListener('input', function() { schedulePreviewUpdate(); updateSizeEstimate(); });
+  });
+}
+
+function setupDishImage(dishRow) {
+  var thumb = dishRow.querySelector('.dish-thumb');
+  var fileInput = dishRow.querySelector('.dish-file-input');
+  var img = dishRow.querySelector('.dish-thumb-img');
+  var removeBtn = dishRow.querySelector('.dish-thumb-remove');
+  var hidden = dishRow.querySelector('.d-img');
+  var urlInput = dishRow.querySelector('.d-url');
+
+  thumb.addEventListener('click', function(e) {
+    if (e.target === removeBtn) return;
+    fileInput.click();
+  });
+  fileInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      var self = this;
+      compressImage(this.files[0], 800, 0.85, function(dataUrl) {
+        hidden.value = dataUrl;
+        img.src = dataUrl;
+        thumb.classList.add('has-image');
+        urlInput.value = '';
+        schedulePreviewUpdate();
+        updateSizeEstimate();
+      });
+    }
+  });
+  urlInput.addEventListener('input', function() {
+    var url = this.value.trim();
+    if (url) {
+      hidden.value = url;
+      img.src = url;
+      thumb.classList.add('has-image');
+    } else {
+      hidden.value = '';
+      img.src = '';
+      thumb.classList.remove('has-image');
+    }
+    schedulePreviewUpdate();
+    updateSizeEstimate();
+  });
+  removeBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    hidden.value = '';
+    img.src = '';
+    urlInput.value = '';
+    fileInput.value = '';
+    thumb.classList.remove('has-image');
+    schedulePreviewUpdate();
+    updateSizeEstimate();
+  });
+  thumb.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    thumb.classList.add('drag-over');
+  });
+  thumb.addEventListener('dragleave', function() {
+    thumb.classList.remove('drag-over');
+  });
+  thumb.addEventListener('drop', function(e) {
+    e.preventDefault();
+    thumb.classList.remove('drag-over');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    }
+  });
+}
+
+function updateCurrencyDisplays() {
+  var currency = document.getElementById('rCurrency').value;
+  document.querySelectorAll('[id^="curr_dish_"]').forEach(function(el) {
+    el.textContent = currency;
+  });
+}
+
+function removeElement(id) {
+  var el = document.getElementById(id);
+  if (el) el.remove();
+  schedulePreviewUpdate();
+  updateSizeEstimate();
+}
+
+/* ============ DATA COLLECTION ============ */
+function collectData(opts) {
+  opts = opts || {};
+  var silent = opts.silent;
+  var name = document.getElementById('rName').value.trim();
+  var whatsapp = document.getElementById('rWhatsapp').value.trim();
+  if (!name) { if (!silent) showToast('Ingresa el nombre del restaurante', true); return null; }
+  if (!whatsapp) { if (!silent) showToast('Ingresa el número de WhatsApp', true); return null; }
+  if (!/^\d{8,15}$/.test(whatsapp)) { if (!silent) showToast('WhatsApp inválido. Solo dígitos, 8-15 números', true); return null; }
+
+  var categories = [];
+  var catEls = document.querySelectorAll('.category');
+  if (catEls.length === 0) { if (!silent) showToast('Agrega al menos una categoría', true); return null; }
+
+  for (var i = 0; i < catEls.length; i++) {
+    var catName = catEls[i].querySelector('.cat-name').value.trim();
+    if (!catName) { if (!silent) showToast('Toda categoría debe tener nombre', true); return null; }
+    var dishes = [];
+    var dishEls = catEls[i].querySelectorAll('.dish-row');
+    for (var j = 0; j < dishEls.length; j++) {
+      var dName = dishEls[j].querySelector('.d-name').value.trim();
+      var dPriceRaw = dishEls[j].querySelector('.d-price').value;
+      var dPrice = parseFloat(dPriceRaw);
+      if (!dName && !dPriceRaw) continue; // skip empty rows silently
+      if (!dName) { if (!silent) showToast('Todo plato debe tener nombre', true); return null; }
+      if (isNaN(dPrice) || dPrice < 0) { if (!silent) showToast('Precio inválido en: ' + dName, true); return null; }
+      dishes.push({
+        name: dName,
+        description: dishEls[j].querySelector('.d-desc').value.trim(),
+        price: dPrice,
+        image: dishEls[j].querySelector('.d-img').value.trim()
+      });
+    }
+    if (dishes.length === 0) { if (!silent) showToast('La categoría "' + catName + '" necesita al menos un plato', true); return null; }
+    categories.push({ name: catName, dishes: dishes });
+  }
+
+  return {
+    name: name,
+    slogan: document.getElementById('rSlogan').value.trim(),
+    description: document.getElementById('rDesc').value.trim(),
+    whatsapp: whatsapp,
+    logo: document.getElementById('rLogo').value.trim(),
+    color: selectedColor,
+    currency: document.getElementById('rCurrency').value,
+    categories: categories
+  };
+}
+
+/* ============ MENU TEMPLATE BUILDER ============ */
+function buildMenuHTML(data) {
+  var css = MENU_CSS();
+  var js = MENU_JS();
+  var html = '';
+  html += '<!DOCTYPE html>\n';
+  html += '<html lang="es">\n';
+  html += '<head>\n';
+  html += '<meta charset="UTF-8">\n';
+  html += '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+  html += '<meta name="theme-color" content="' + data.color + '">\n';
+  html += '<title>' + escapeHtml(data.name) + '</title>\n';
+  html += '<style>' + css + '</style>\n';
+  html += '</head>\n';
+  html += '<body>\n';
+  html += '<div id="app"></div>\n';
+  html += '<script>\n';
+  html += 'var RESTAURANT = ' + JSON.stringify(data) + ';\n';
+  html += 'document.documentElement.style.setProperty("--accent", "' + data.color + '");\n';
+  html += 'document.documentElement.style.setProperty("--accent-rgb", "' + hexToRgbStr(data.color) + '");\n';
+  html += js + '\n';
+  html += '</scr' + 'ipt>\n';
+  html += '</body>\n';
+  html += '</html>';
+  return html;
+}
+
+/* ============ MENU CSS (Premium) ============ */
+function MENU_CSS() {
+  var c = '';
+  c += ':root{--accent:#ff6b35;--accent-rgb:255,107,53;--gold:#d4af37;--bg-0:#07070b;--bg-1:#0f0f1a;--glass:rgba(255,255,255,0.035);--glass-strong:rgba(255,255,255,0.07);--border:rgba(255,255,255,0.08);--border-strong:rgba(255,255,255,0.14);--text:#f4f4fa;--text-muted:#8a8a9a;--text-soft:#b8b8c8;}';
+  c += '*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}';
+  c += 'html{scroll-behavior:smooth;}';
+  c += 'body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg-0);color:var(--text);min-height:100vh;padding-bottom:140px;position:relative;overflow-x:hidden;}';
+  // Decorative orbs
+  c += 'body::before,body::after{content:"";position:fixed;width:500px;height:500px;border-radius:50%;filter:blur(140px);opacity:0.18;z-index:0;pointer-events:none;}';
+  c += 'body::before{background:var(--accent);top:-200px;right:-150px;}';
+  c += 'body::after{background:var(--gold);bottom:-200px;left:-150px;}';
+  c += '#app{position:relative;z-index:1;}';
+  // Header
+  c += '.header{padding:38px 24px 30px;text-align:center;position:relative;background:linear-gradient(180deg,rgba(255,255,255,0.03) 0%,transparent 100%);border-bottom:1px solid var(--border);}';
+  c += '.header::after{content:"";position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:140px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}';
+  c += '.logo-wrap{position:relative;display:inline-block;margin-bottom:16px;width:96px;height:96px;}';
+  c += '.logo-wrap::before{content:"";position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(from 0deg,var(--accent),var(--gold),var(--accent));filter:blur(10px);opacity:0.5;z-index:0;animation:rotate 8s linear infinite;}';
+  c += '@keyframes rotate{to{transform:rotate(360deg);}}';
+  c += '.logo{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.12);box-shadow:0 8px 32px rgba(0,0,0,0.5);background:var(--glass);position:absolute;inset:0;z-index:2;}';
+  c += '.logo-placeholder{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--accent),rgba(var(--accent-rgb),0.6));display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:800;color:#fff;position:absolute;inset:0;z-index:1;border:3px solid rgba(255,255,255,0.12);box-shadow:0 8px 32px rgba(0,0,0,0.5);}';
+  c += '.restaurant-name{font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-0.5px;background:linear-gradient(180deg,#fff,#c8c8d4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}';
+  c += '.slogan{font-size:11px;color:var(--gold);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:8px;}';
+  c += '.restaurant-desc{color:var(--text-soft);font-size:14px;margin-bottom:18px;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.5;}';
+  c += '.open-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(6,214,160,0.12);color:#06d6a0;padding:6px 14px;border-radius:20px;font-size:11.5px;font-weight:600;border:1px solid rgba(6,214,160,0.25);letter-spacing:0.5px;text-transform:uppercase;}';
+  c += '.open-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:#06d6a0;box-shadow:0 0 8px #06d6a0;animation:pulse 2s infinite;}';
+  c += '@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(1.3);}}';
+  // Nav
+  c += '.nav{position:sticky;top:0;background:rgba(7,7,11,0.78);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--border);z-index:100;padding:14px 0;overflow-x:auto;scrollbar-width:none;}';
+  c += '.nav::-webkit-scrollbar{display:none;}';
+  c += '.nav-inner{display:flex;gap:8px;padding:0 20px;min-width:max-content;}';
+  c += '.nav-item{white-space:nowrap;padding:8px 18px;background:var(--glass);border:1px solid var(--border);border-radius:24px;color:var(--text-soft);font-size:13.5px;font-weight:500;cursor:pointer;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);}';
+  c += '.nav-item:hover{background:var(--glass-strong);color:var(--text);transform:translateY(-1px);}';
+  c += '.nav-item.active{background:linear-gradient(135deg,var(--accent),rgba(var(--accent-rgb),0.85));color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(var(--accent-rgb),0.4);}';
+  // Section
+  c += '.section{padding:24px 20px 8px;max-width:620px;margin:0 auto;width:100%;}';
+  c += '.section-title{font-size:21px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:12px;letter-spacing:-0.3px;}';
+  c += '.section-title::before{content:"";width:4px;height:22px;background:linear-gradient(180deg,var(--accent),var(--gold));border-radius:2px;}';
+  // Dish
+  c += '.dish{display:flex;gap:14px;background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);opacity:0;transform:translateY(20px);position:relative;overflow:hidden;}';
+  c += '.dish.revealed{opacity:1;transform:translateY(0);}';
+  c += '.dish::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);opacity:0;transition:opacity 0.3s;}';
+  c += '.dish:hover{border-color:rgba(var(--accent-rgb),0.3);background:rgba(var(--accent-rgb),0.04);transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,0.35);}';
+  c += '.dish:hover::before{opacity:1;}';
+  c += '.dish:active{transform:translateY(0) scale(0.99);}';
+  c += '.dish-img{width:84px;height:84px;border-radius:12px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,var(--glass),var(--glass-strong));border:1px solid var(--border);}';
+  c += '.dish-info{flex:1;min-width:0;display:flex;flex-direction:column;}';
+  c += '.dish-name{font-size:16px;font-weight:600;margin-bottom:4px;letter-spacing:-0.2px;}';
+  c += '.dish-desc{font-size:13px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}';
+  c += '.dish-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:auto;}';
+  c += '.dish-price{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:-0.5px;}';
+  c += '.add-btn{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--accent),rgba(var(--accent-rgb),0.8));color:#fff;border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.25s;line-height:1;font-weight:300;box-shadow:0 4px 14px rgba(var(--accent-rgb),0.35);}';
+  c += '.add-btn:hover{transform:scale(1.1) rotate(90deg);box-shadow:0 6px 20px rgba(var(--accent-rgb),0.55);}';
+  c += '.add-btn:active{transform:scale(0.95);}';
+  // Added flash
+  c += '.added-flash{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:#06d6a0;color:#fff;padding:8px 18px;border-radius:24px;font-size:12px;font-weight:700;pointer-events:none;z-index:5;box-shadow:0 6px 18px rgba(6,214,160,0.5);animation:flashAdd 0.9s ease forwards;letter-spacing:0.3px;}';
+  c += '@keyframes flashAdd{0%{transform:translate(-50%,-50%) scale(0);opacity:0;}25%{transform:translate(-50%,-50%) scale(1);opacity:1;}75%{transform:translate(-50%,-90%) scale(1);opacity:1;}100%{transform:translate(-50%,-130%) scale(0.8);opacity:0;}}';
+  // Cart
+  c += '.cart{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(140px);width:calc(100% - 32px);max-width:480px;background:linear-gradient(135deg,var(--accent),rgba(var(--accent-rgb),0.9));color:#fff;border-radius:16px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 14px 40px rgba(var(--accent-rgb),0.45),0 4px 12px rgba(0,0,0,0.4);cursor:pointer;transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);z-index:90;border:1px solid rgba(255,255,255,0.18);}';
+  c += '.cart.visible{transform:translateX(-50%) translateY(0);}';
+  c += '.cart-left{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;}';
+  c += '.cart-count{background:rgba(255,255,255,0.25);padding:3px 10px;border-radius:12px;font-size:13px;font-weight:700;min-width:28px;text-align:center;}';
+  c += '.cart-count.pulse{animation:countPulse 0.4s ease;}';
+  c += '@keyframes countPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.4);background:rgba(255,255,255,0.4);}}';
+  c += '.cart-total{font-size:18px;font-weight:800;letter-spacing:-0.3px;}';
+  // Modal
+  c += '.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;display:none;align-items:flex-end;justify-content:center;}';
+  c += '.modal-overlay.visible{display:flex;}';
+  c += '.modal{background:linear-gradient(180deg,#1c1c2e,#14141f);width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:28px 24px;max-height:85vh;overflow-y:auto;animation:slideUp 0.4s cubic-bezier(0.4,0,0.2,1);border:1px solid rgba(255,255,255,0.08);border-bottom:none;box-shadow:0 -16px 48px rgba(0,0,0,0.5);}';
+  c += '@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}';
+  c += '.modal-title{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center;letter-spacing:-0.3px;}';
+  c += '.modal-subtitle{text-align:center;font-size:12.5px;color:var(--text-muted);margin-bottom:22px;letter-spacing:0.3px;}';
+  c += '.modal-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border-strong),transparent);margin:0 -24px 20px;}';
+  c += '.cart-item{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);gap:10px;animation:itemIn 0.3s ease;}';
+  c += '@keyframes itemIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}';
+  c += '.cart-item-info{flex:1;min-width:0;}';
+  c += '.cart-item-name{font-weight:600;font-size:15px;margin-bottom:2px;}';
+  c += '.cart-item-price{color:var(--text-muted);font-size:12.5px;}';
+  c += '.qty-control{display:flex;align-items:center;gap:10px;background:var(--glass);padding:4px;border-radius:24px;border:1px solid var(--border);}';
+  c += '.qty-btn{width:28px;height:28px;border-radius:50%;background:var(--glass-strong);color:#fff;border:none;cursor:pointer;font-size:16px;line-height:1;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}';
+  c += '.qty-btn:hover{background:var(--accent);transform:scale(1.1);}';
+  c += '.qty{min-width:24px;text-align:center;font-weight:600;font-size:14px;}';
+  c += '.cart-item-total{font-weight:700;color:var(--accent);min-width:75px;text-align:right;font-size:15px;}';
+  c += '.cart-empty{text-align:center;padding:50px 0;color:var(--text-muted);font-size:14px;}';
+  c += '.cart-summary{margin-top:20px;padding-top:20px;border-top:2px solid var(--border);}';
+  c += '.summary-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:var(--text-soft);}';
+  c += '.summary-total{font-size:18px;font-weight:700;margin-top:12px;color:#fff;display:flex;justify-content:space-between;align-items:center;}';
+  c += '.summary-total .amount{color:var(--accent);font-size:24px;font-weight:800;letter-spacing:-0.5px;}';
+  c += '.wa-btn{width:100%;background:linear-gradient(135deg,#25d366,#1da851);color:#fff;border:none;padding:16px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:22px;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;box-shadow:0 6px 20px rgba(37,211,102,0.35);letter-spacing:0.2px;}';
+  c += '.wa-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(37,211,102,0.5);}';
+  c += '.wa-btn:active{transform:translateY(0);}';
+  c += '.wa-icon{width:18px;height:18px;fill:currentColor;}';
+  c += '.close-btn{width:100%;background:var(--glass);color:var(--text-soft);border:1px solid var(--border);padding:13px;border-radius:12px;font-size:14px;cursor:pointer;margin-top:10px;transition:all 0.2s;font-weight:500;}';
+  c += '.close-btn:hover{background:var(--glass-strong);color:#fff;}';
+  // Footer
+  c += '.menu-footer{text-align:center;padding:30px 20px;color:var(--text-muted);font-size:11.5px;border-top:1px solid var(--border);margin-top:20px;}';
+  c += '.menu-footer .brand{color:var(--gold);font-weight:600;letter-spacing:1px;}';
+  // Desktop
+  c += '@media (min-width:600px){.dish{padding:16px;}.dish-img{width:100px;height:100px;}.restaurant-name{font-size:34px;}.logo,.logo-placeholder{width:104px;height:104px;}.section{padding:28px 24px 8px;}}';
+  return c;
+}
+
+/* ============ MENU JS (Premium) ============ */
+function MENU_JS() {
+  var s = '';
+  s += 'var cart = [];\n';
+  s += 'function escapeHtml(s){if(s==null)return "";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\'/g,"&#39;");}\n';
+  s += 'function formatPrice(n){return (RESTAURANT.currency||"S/")+" "+Number(n).toFixed(2);}\n';
+  s += 'function renderApp(){\n';
+  s += '  var app=document.getElementById("app");\n';
+  s += '  var html="";\n';
+  // Header
+  s += '  html+="<header class=\\\"header\\\">";\n';
+  s += '  html+="<div class=\\\"logo-wrap\\\">";\n';
+  s += '  html+="<div class=\\\"logo-placeholder\\\">"+escapeHtml(RESTAURANT.name.charAt(0).toUpperCase())+"</div>";\n';
+  s += '  if(RESTAURANT.logo){html+="<img src=\\\""+escapeHtml(RESTAURANT.logo)+"\\\" class=\\\"logo\\\" alt=\\\"logo\\\" onerror=\\\"this.remove()\\\"/>";}\n';
+  s += '  html+="</div>";\n';
+  s += '  html+="<h1 class=\\\"restaurant-name\\\">"+escapeHtml(RESTAURANT.name)+"</h1>";\n';
+  s += '  if(RESTAURANT.slogan){html+="<div class=\\\"slogan\\\">"+escapeHtml(RESTAURANT.slogan)+"</div>";}\n';
+  s += '  if(RESTAURANT.description){html+="<p class=\\\"restaurant-desc\\\">"+escapeHtml(RESTAURANT.description)+"</p>";}\n';
+  s += '  html+="<span class=\\\"open-badge\\\">Abierto ahora</span>";\n';
+  s += '  html+="</header>";\n';
+  // Nav
+  s += '  html+="<nav class=\\\"nav\\\"><div class=\\\"nav-inner\\\" id=\\\"navInner\\\">";\n';
+  s += '  RESTAURANT.categories.forEach(function(cat,i){\n';
+  s += '    html+="<div class=\\\"nav-item"+(i===0?" active":"")+"\\\" data-idx=\\\""+i+"\\\">"+escapeHtml(cat.name)+"</div>";\n';
+  s += '  });\n';
+  s += '  html+="</div></nav>";\n';
+  // Sections
+  s += '  RESTAURANT.categories.forEach(function(cat,i){\n';
+  s += '    html+="<section class=\\\"section\\\" id=\\\"cat-"+i+"\\\">";\n';
+  s += '    html+="<h2 class=\\\"section-title\\\">"+escapeHtml(cat.name)+"</h2>";\n';
+  s += '    cat.dishes.forEach(function(dish,j){\n';
+  s += '      html+="<div class=\\\"dish\\\" data-cat=\\\""+i+"\\\" data-dish=\\\""+j+"\\\" style=\\\"transition-delay:\"+(j*40)+\"ms\\\">";\n';
+  s += '      if(dish.image){html+="<img src=\\\""+escapeHtml(dish.image)+"\\\" class=\\\"dish-img\\\" alt=\\\"\\\" onerror=\\\"this.style.display=\\"none\\"\\"/>";}\n';
+  s += '      else{html+="<div class=\\\"dish-img\\\"></div>";}\n';
+  s += '      html+="<div class=\\\"dish-info\\\">";\n';
+  s += '      html+="<div class=\\\"dish-name\\\">"+escapeHtml(dish.name)+"</div>";\n';
+  s += '      if(dish.description){html+="<div class=\\\"dish-desc\\\">"+escapeHtml(dish.description)+"</div>";}\n';
+  s += '      html+="<div class=\\\"dish-bottom\\\">";\n';
+  s += '      html+="<div class=\\\"dish-price\\\">"+formatPrice(dish.price)+"</div>";\n';
+  s += '      html+="<button class=\\\"add-btn\\\" data-cat=\\\""+i+"\\\" data-dish=\\\""+j+"\\\" title=\\\"Agregar\\\">+</button>";\n';
+  s += '      html+="</div></div></div>";\n';
+  s += '    });\n';
+  s += '    html+="</section>";\n';
+  s += '  });\n';
+  // Footer
+  s += '  html+="<div class=\\\"menu-footer\\\"><span class=\\\"brand\\\">"+escapeHtml(RESTAURANT.name)+"</span> · Menú Digital</div>";\n';
+  // Cart bar
+  s += '  html+="<div class=\\\"cart\\\" id=\\\"cartBar\\\">";\n';
+  s += '  html+="<div class=\\\"cart-left\\\"><span>Ver pedido</span><span class=\\\"cart-count\\\" id=\\\"cartCount\\\">0</span></div>";\n';
+  s += '  html+="<div class=\\\"cart-total\\\" id=\\\"cartTotal\\\">"+formatPrice(0)+"</div>";\n';
+  s += '  html+="</div>";\n';
+  // Modal
+  s += '  html+="<div class=\\\"modal-overlay\\\" id=\\\"modal\\\"><div class=\\\"modal\\\">";\n';
+  s += '  html+="<h2 class=\\\"modal-title\\\">Tu Pedido</h2>";\n';
+  s += '  html+="<p class=\\\"modal-subtitle\\\">Revisa tu orden antes de enviar por WhatsApp</p>";\n';
+  s += '  html+="<div class=\\\"modal-divider\\\"></div>";\n';
+  s += '  html+="<div id=\\\"cartItems\\\"></div>";\n';
+  s += '  html+="<div class=\\\"cart-summary\\\" id=\\\"cartSummary\\\"></div>";\n';
+  s += '  html+="<button class=\\\"wa-btn\\\" id=\\\"waBtn\\\"><svg class=\\\"wa-icon\\\" viewBox=\\\"0 0 24 24\\\"><path d=\\\"M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z\\\"/></svg>Enviar Pedido por WhatsApp</button>";\n';
+  s += '  html+="<button class=\\\"close-btn\\\" id=\\\"closeBtn\\\">Seguir agregando</button>";\n';
+  s += '  html+="</div></div>";\n';
+  s += '  app.innerHTML=html;\n';
+  s += '  attachEvents();\n';
+  s += '  setupReveal();\n';
+  s += '  updateCart();\n';
+  s += '}\n';
+  // Reveal
+  s += 'function setupReveal(){\n';
+  s += '  var dishes=document.querySelectorAll(".dish");\n';
+  s += '  if(!("IntersectionObserver" in window)){dishes.forEach(function(d){d.classList.add("revealed");});return;}\n';
+  s += '  var io=new IntersectionObserver(function(entries){\n';
+  s += '    entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add("revealed");io.unobserve(e.target);}});\n';
+  s += '  },{threshold:0.05,rootMargin:"0px 0px -30px 0px"});\n';
+  s += '  dishes.forEach(function(d){io.observe(d);});\n';
+  s += '}\n';
+  // Events
+  s += 'function attachEvents(){\n';
+  s += '  document.querySelectorAll(".add-btn").forEach(function(btn){\n';
+  s += '    btn.addEventListener("click",function(e){\n';
+  s += '      e.stopPropagation();\n';
+  s += '      var catIdx=parseInt(this.dataset.cat);\n';
+  s += '      var dishIdx=parseInt(this.dataset.dish);\n';
+  s += '      addToCart(catIdx,dishIdx,this);\n';
+  s += '    });\n';
+  s += '  });\n';
+  s += '  document.querySelectorAll(".dish").forEach(function(d){\n';
+  s += '    d.addEventListener("click",function(){\n';
+  s += '      var catIdx=parseInt(this.dataset.cat);\n';
+  s += '      var dishIdx=parseInt(this.dataset.dish);\n';
+  s += '      addToCart(catIdx,dishIdx);\n';
+  s += '    });\n';
+  s += '  });\n';
+  s += '  document.querySelectorAll(".nav-item").forEach(function(item){\n';
+  s += '    item.addEventListener("click",function(){\n';
+  s += '      document.querySelectorAll(".nav-item").forEach(function(n){n.classList.remove("active");});\n';
+  s += '      this.classList.add("active");\n';
+  s += '      var idx=parseInt(this.dataset.idx);\n';
+  s += '      var el=document.getElementById("cat-"+idx);\n';
+  s += '      if(el){var top=el.getBoundingClientRect().top+window.pageYOffset-70;window.scrollTo({top:top,behavior:"smooth"});}\n';
+  s += '    });\n';
+  s += '  });\n';
+  s += '  document.getElementById("cartBar").addEventListener("click",openModal);\n';
+  s += '  document.getElementById("closeBtn").addEventListener("click",closeModal);\n';
+  s += '  document.getElementById("waBtn").addEventListener("click",sendWhatsApp);\n';
+  s += '  document.getElementById("modal").addEventListener("click",function(e){if(e.target===this)closeModal();});\n';
+  s += '  window.addEventListener("scroll",updateActiveNav,{passive:true});\n';
+  s += '}\n';
+  // Update active nav on scroll
+  s += 'function updateActiveNav(){\n';
+  s += '  var scrollPos=window.pageYOffset+100;\n';
+  s += '  var sections=document.querySelectorAll(".section");\n';
+  s += '  var activeIdx=0;\n';
+  s += '  for(var i=0;i<sections.length;i++){if(sections[i].offsetTop<=scrollPos)activeIdx=i;}\n';
+  s += '  document.querySelectorAll(".nav-item").forEach(function(n,i){n.classList.toggle("active",i===activeIdx);});\n';
+  s += '}\n';
+  // Add to cart
+  s += 'function addToCart(catIdx,dishIdx,btn){\n';
+  s += '  var dish=RESTAURANT.categories[catIdx].dishes[dishIdx];\n';
+  s += '  var existing=null;\n';
+  s += '  for(var i=0;i<cart.length;i++){if(cart[i].catIdx===catIdx&&cart[i].dishIdx===dishIdx){existing=cart[i];break;}}\n';
+  s += '  if(existing){existing.qty++;}\n';
+  s += '  else{cart.push({catIdx:catIdx,dishIdx:dishIdx,name:dish.name,price:dish.price,qty:1});}\n';
+  s += '  if(btn){showAddedFlash(btn.closest(".dish"));}\n';
+  s += '  updateCart(true);\n';
+  s += '}\n';
+  // Show added flash
+  s += 'function showAddedFlash(dishEl){\n';
+  s += '  if(!dishEl)return;\n';
+  s += '  var flash=document.createElement("div");\n';
+  s += '  flash.className="added-flash";\n';
+  s += '  flash.textContent="AGREGADO";\n';
+  s += '  dishEl.appendChild(flash);\n';
+  s += '  setTimeout(function(){if(flash.parentNode)flash.parentNode.removeChild(flash);},900);\n';
+  s += '}\n';
+  // Update cart
+  s += 'function updateCart(pulse){\n';
+  s += '  var count=0,total=0;\n';
+  s += '  cart.forEach(function(c){count+=c.qty;total+=c.price*c.qty;});\n';
+  s += '  var countEl=document.getElementById("cartCount");\n';
+  s += '  countEl.textContent=count;\n';
+  s += '  document.getElementById("cartTotal").textContent=formatPrice(total);\n';
+  s += '  var cartBar=document.getElementById("cartBar");\n';
+  s += '  if(count>0){cartBar.classList.add("visible");}else{cartBar.classList.remove("visible");}\n';
+  s += '  if(pulse){countEl.classList.remove("pulse");void countEl.offsetWidth;countEl.classList.add("pulse");}\n';
+  s += '  renderCartItems();\n';
+  s += '}\n';
+  // Render cart items
+  s += 'function renderCartItems(){\n';
+  s += '  var container=document.getElementById("cartItems");\n';
+  s += '  var summary=document.getElementById("cartSummary");\n';
+  s += '  if(cart.length===0){\n';
+  s += '    container.innerHTML="<div class=\\\"cart-empty\\\">Tu carrito esta vacio</div>";\n';
+  s += '    summary.innerHTML="";\n';
+  s += '    return;\n';
+  s += '  }\n';
+  s += '  var html="";\n';
+  s += '  cart.forEach(function(item,i){\n';
+  s += '    html+="<div class=\\\"cart-item\\\">";\n';
+  s += '    html+="<div class=\\\"cart-item-info\\\">";\n';
+  s += '    html+="<div class=\\\"cart-item-name\\\">"+escapeHtml(item.name)+"</div>";\n';
+  s += '    html+="<div class=\\\"cart-item-price\\\">"+formatPrice(item.price)+" c/u</div>";\n';
+  s += '    html+="</div>";\n';
+  s += '    html+="<div class=\\\"qty-control\\\">";\n';
+  s += '    html+="<button class=\\\"qty-btn\\\" data-action=\\\"dec\\\" data-idx=\\\""+i+"\\\">−</button>";\n';
+  s += '    html+="<span class=\\\"qty\\\">"+item.qty+"</span>";\n';
+  s += '    html+="<button class=\\\"qty-btn\\\" data-action=\\\"inc\\\" data-idx=\\\""+i+"\\\">+</button>";\n';
+  s += '    html+="</div>";\n';
+  s += '    html+="<div class=\\\"cart-item-total\\\">"+formatPrice(item.price*item.qty)+"</div>";\n';
+  s += '    html+="</div>";\n';
+  s += '  });\n';
+  s += '  container.innerHTML=html;\n';
+  s += '  var total=0;cart.forEach(function(c){total+=c.price*c.qty;});\n';
+  s += '  summary.innerHTML="<div class=\\\"summary-row\\\"><span>Subtotal</span><span>"+formatPrice(total)+"</span></div>";\n';
+  s += '  summary.innerHTML+="<div class=\\\"summary-total\\\"><span>Total</span><span class=\\\"amount\\\">"+formatPrice(total)+"</span></div>";\n';
+  s += '  container.querySelectorAll(".qty-btn").forEach(function(btn){\n';
+  s += '    btn.addEventListener("click",function(){\n';
+  s += '      var idx=parseInt(this.dataset.idx);\n';
+  s += '      if(this.dataset.action==="inc"){cart[idx].qty++;}\n';
+  s += '      else{cart[idx].qty--;if(cart[idx].qty<=0)cart.splice(idx,1);}\n';
+  s += '      updateCart();\n';
+  s += '    });\n';
+  s += '  });\n';
+  s += '}\n';
+  // Modal
+  s += 'function openModal(){\n';
+  s += '  if(cart.length===0)return;\n';
+  s += '  document.getElementById("modal").classList.add("visible");\n';
+  s += '}\n';
+  s += 'function closeModal(){document.getElementById("modal").classList.remove("visible");}\n';
+  // WhatsApp
+  s += 'function sendWhatsApp(){\n';
+  s += '  if(cart.length===0)return;\n';
+  s += '  var msg="*"+RESTAURANT.name+"*\\n";\n';
+  s += '  if(RESTAURANT.slogan){msg+="_"+RESTAURANT.slogan+"_\\n";}\n';
+  s += '  msg+="\\n*PEDIDO*\\n\\n";\n';
+  s += '  cart.forEach(function(item){\n';
+  s += '    msg+="• "+item.qty+"x "+item.name+" — "+formatPrice(item.price*item.qty)+"\\n";\n';
+  s += '  });\n';
+  s += '  var total=0;cart.forEach(function(c){total+=c.price*c.qty;});\n';
+  s += '  msg+="\\n*TOTAL: "+formatPrice(total)+"*\\n\\n";\n';
+  s += '  msg+="Hola, quisiera confirmar este pedido por favor.";\n';
+  s += '  var url="https://wa.me/"+RESTAURANT.whatsapp+"?text="+encodeURIComponent(msg);\n';
+  s += '  window.open(url,"_blank");\n';
+  s += '}\n';
+  s += 'renderApp();\n';
+  return s;
+}
+
+/* ============ LIVE PREVIEW ============ */
+var previewTimer = null;
+function schedulePreviewUpdate() {
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(function() {
+    updatePreview();
+    updateSizeEstimate();
+  }, 450);
+}
+function updatePreview() {
+  var iframe = document.getElementById('previewFrame');
+  var statusEl = document.getElementById('previewStatus');
+  var data = collectData({ silent: true });
+  if (!data) {
+    iframe.srcdoc = '<div style="padding:40px 20px;text-align:center;color:#8a8a9a;font-family:-apple-system,sans-serif;background:#07070b;height:100vh;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1.6;">Completa los campos obligatorios<br><span style="color:#5a5a6a;font-size:11px;">nombre, WhatsApp y al menos un plato</span></div>';
+    statusEl.textContent = 'Esperando datos...';
+    return;
+  }
+  statusEl.textContent = 'Actualizando...';
+  var html = buildMenuHTML(data);
+  iframe.onload = function() {
+    statusEl.textContent = 'Vista previa en vivo';
+  };
+  iframe.srcdoc = html;
+}
+function updateSizeEstimate() {
+  var data = collectData({ silent: true });
+  var el = document.getElementById('sizeEstimate');
+  if (!data) {
+    el.textContent = 'Tamaño estimado: —';
+    el.classList.remove('warning');
+    return;
+  }
+  var html = buildMenuHTML(data);
+  var kb = Math.round(html.length / 1024);
+  el.textContent = 'Tamaño estimado del archivo: ' + kb + ' KB';
+  if (kb > 3500) {
+    el.classList.add('warning');
+    el.textContent += ' · Recomendado: imágenes más pequeñas';
+  } else {
+    el.classList.remove('warning');
+  }
+}
+
+/* ============ GENERATE & DOWNLOAD ============ */
+function generateMenu() {
+  var data = collectData();
+  if (!data) return;
+  try {
+    var html = buildMenuHTML(data);
+
+    // Si estamos embebidos en el dashboard de MenuPro (iframe), enviar el HTML
+    // al parent via postMessage para que pueda guardarlo en la cuenta del usuario.
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage({
+          type: 'menupro:html-ready',
+          html: html,
+          name: data.name || 'Menú sin nombre'
+        }, '*');
+      } catch (e) { /* iframe cross-origin — silencioso */ }
+    }
+
+    // Descarga directa del archivo HTML standalone
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    var safeName = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'menu';
+    a.download = 'menu-' + safeName + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1500);
+    showToast('Menú generado con éxito');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  }
+}
+
+/* ============ MOBILE PREVIEW TOGGLE ============ */
+function setupPreviewToggle() {
+  var toggle = document.getElementById('previewToggle');
+  var pane = document.getElementById('previewPane');
+  var closeBtn = document.getElementById('closePreview');
+  toggle.addEventListener('click', function() {
+    pane.classList.add('mobile-visible');
+    updatePreview();
+  });
+  closeBtn.addEventListener('click', function() {
+    pane.classList.remove('mobile-visible');
+  });
+}
+
+/* ============ INIT ============ */
+function init() {
+  renderColors();
+  setupLogoInput();
+  setupPreviewToggle();
+  // Currency listener updates all displays
+  document.getElementById('rCurrency').addEventListener('change', function() {
+    updateCurrencyDisplays();
+    schedulePreviewUpdate();
+    updateSizeEstimate();
+  });
+  // Field listeners
+  ['rName','rSlogan','rDesc','rWhatsapp'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', function() {
+      schedulePreviewUpdate();
+      updateSizeEstimate();
+    });
+  });
+  // Default categories
+  addCategory('Entradas');
+  addCategory('Platos de Fondo');
+  // Initial preview
+  updatePreview();
+  updateSizeEstimate();
+}
+init();
+</script>
+</body>
+</html>
