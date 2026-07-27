@@ -1,0 +1,801 @@
+     1→===== LEER TODOS LOS MODELOS PHP SISTEMA CITAS 2 =====
+     2→
+     3→================ Auditoria.php ================
+     4→<?php
+     5→class Auditoria {
+     6→    private $conn;
+     7→    private $table = 'auditoria';
+     8→
+     9→    public function __construct($db) {
+    10→        $this->conn = $db;
+    11→    }
+    12→
+    13→    // LISTAR LOGS (Para el reporte del admin)
+    14→    public function leer() {
+    15→        $query = "SELECT a.*, u.nombre as usuario, u.rol_nombre_temp 
+    16→                  FROM (SELECT users.*, roles.nombre as rol_nombre_temp FROM usuarios users JOIN roles ON users.id_rol = roles.id_rol) u
+    17→                  JOIN " . $this->table . " a ON a.id_usuario = u.id_usuario 
+    18→                  ORDER BY a.fecha_hora DESC";
+    19→        
+    20→        // Nota: Hacemos una subconsulta o join simple dependiendo de tu estructura exacta, 
+    21→        // pero esto debería funcionar con la estructura actual.
+    22→        // Mejor consulta directa:
+    23→        $query = "SELECT a.*, u.nombre as usuario 
+    24→                  FROM " . $this->table . " a
+    25→                  JOIN usuarios u ON a.id_usuario = u.id_usuario
+    26→                  ORDER BY a.fecha_hora DESC";
+    27→
+    28→        $stmt = $this->conn->prepare($query);
+    29→        $stmt->execute();
+    30→        return $stmt;
+    31→    }
+    32→
+    33→    // REGISTRAR EVENTO
+    34→    public function registrar($id_usuario, $accion, $tabla, $id_afectado, $descripcion) {
+    35→        $query = "INSERT INTO " . $this->table . " (id_usuario, accion, tabla_afectada, id_registro_afectado, descripcion, ip_usuario) 
+    36→                  VALUES (:user, :accion, :tabla, :id_af, :desc, :ip)";
+    37→        
+    38→        $stmt = $this->conn->prepare($query);
+    39→        
+    40→        // Obtener IP del cliente
+    41→        $ip = $_SERVER['REMOTE_ADDR'];
+    42→
+    43→        $stmt->bindParam(':user', $id_usuario);
+    44→        $stmt->bindParam(':accion', $accion);
+    45→        $stmt->bindParam(':tabla', $tabla);
+    46→        $stmt->bindParam(':id_af', $id_afectado);
+    47→        $stmt->bindParam(':desc', $descripcion);
+    48→        $stmt->bindParam(':ip', $ip);
+    49→
+    50→        return $stmt->execute();
+    51→    }
+    52→}
+    53→================ Caja.php ================
+    54→<?php
+    55→class Caja {
+    56→    private $conn;
+    57→    private $table_sesiones = 'sesiones_caja';
+    58→    private $table_gastos = 'gastos';
+    59→    private $table_pagos = 'pagos';
+    60→
+    61→    public function __construct($db) {
+    62→        $this->conn = $db;
+    63→    }
+    64→
+    65→    // 1. REGISTRAR COBRO (INGRESO)
+    66→    public function registrarCobro($id_cita, $monto, $metodo_pago, $observaciones) {
+    67→        try {
+    68→            $this->conn->beginTransaction();
+    69→            $query = "INSERT INTO " . $this->table_pagos . " (id_cita, monto, metodo_pago, fecha_pago, observaciones) 
+    70→                      VALUES (:id_cita, :monto, :metodo, NOW(), :obs)";
+    71→            $stmt = $this->conn->prepare($query);
+    72→            $stmt->bindParam(':id_cita', $id_cita);
+    73→            $stmt->bindParam(':monto', $monto);
+    74→            $stmt->bindParam(':metodo', $metodo_pago);
+    75→            $stmt->bindParam(':obs', $observaciones);
+    76→            $stmt->execute();
+    77→            $this->conn->commit();
+    78→            return true;
+    79→        } catch (Exception $e) {
+    80→            $this->conn->rollBack();
+    81→            return false;
+    82→        }
+    83→    }
+    84→
+    85→    // --- MÉTODOS DE CAJA ---
+    86→    public function obtenerSesionActiva($id_usuario) {
+    87→        $query = "SELECT * FROM " . $this->table_sesiones . " WHERE id_usuario = :id AND estado = 'abierta' LIMIT 1";
+    88→        $stmt = $this->conn->prepare($query); $stmt->bindParam(':id', $id_usuario); $stmt->execute();
+    89→        return $stmt->fetch(PDO::FETCH_ASSOC);
+    90→    }
+    91→
+    92→    public function abrirCaja($id_usuario, $monto) {
+    93→        $query = "INSERT INTO " . $this->table_sesiones . " (id_usuario, monto_apertura, fecha_apertura, estado) VALUES (:id, :monto, NOW(), 'abierta')";
+    94→        $stmt = $this->conn->prepare($query); $stmt->bindParam(':id', $id_usuario); $stmt->bindParam(':monto', $monto);
+    95→        return $stmt->execute();
+    96→    }
+    97→
+    98→    public function registrarGasto($id_sesion, $descripcion, $monto) {
+    99→        $query = "INSERT INTO " . $this->table_gastos . " (id_sesion, descripcion, monto, fecha_gasto) VALUES (:id, :desc, :monto, NOW())";
+   100→        $stmt = $this->conn->prepare($query); $stmt->bindParam(':id', $id_sesion); $stmt->bindParam(':desc', $descripcion); $stmt->bindParam(':monto', $monto);
+   101→        return $stmt->execute();
+   102→    }
+   103→
+   104→    public function obtenerBalance($id_sesion, $fecha_apertura) {
+   105→        // Ingresos
+   106→        $sqlIngresos = "SELECT SUM(monto) as total FROM " . $this->table_pagos . " WHERE fecha_pago >= :fecha";
+   107→        $stmtIng = $this->conn->prepare($sqlIngresos); $stmtIng->bindParam(':fecha', $fecha_apertura); $stmtIng->execute();
+   108→        $ingresos = $stmtIng->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+   109→        // Gastos
+   110→        $sqlGastos = "SELECT SUM(monto) as total FROM " . $this->table_gastos . " WHERE id_sesion = :id";
+   111→        $stmtGas = $this->conn->prepare($sqlGastos); $stmtGas->bindParam(':id', $id_sesion); $stmtGas->execute();
+   112→        $gastos = $stmtGas->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+   113→        return ['ingresos' => $ingresos, 'gastos' => $gastos];
+   114→    }
+   115→
+   116→    public function listarGastos($id_sesion) {
+   117→        $query = "SELECT * FROM " . $this->table_gastos . " WHERE id_sesion = :id ORDER BY fecha_gasto DESC";
+   118→        $stmt = $this->conn->prepare($query); $stmt->bindParam(':id', $id_sesion); $stmt->execute(); return $stmt->fetchAll(PDO::FETCH_ASSOC);
+   119→    }
+   120→
+   121→    public function listarIngresosRecientes() {
+   122→        $query = "SELECT p.*, u.nombre as paciente, s.nombre_servicio 
+   123→                  FROM " . $this->table_pagos . " p
+   124→                  JOIN citas c ON p.id_cita = c.id_cita
+   125→                  JOIN usuarios u ON c.id_paciente = u.id_usuario
+   126→                  LEFT JOIN servicios s ON c.id_servicio = s.id_servicio
+   127→                  ORDER BY p.fecha_pago DESC LIMIT 10";
+   128→        $stmt = $this->conn->prepare($query);
+   129→        $stmt->execute();
+   130→        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+   131→    }
+   132→
+   133→    public function cerrarCaja($id_sesion, $monto_cierre, $obs) {
+   134→        $query = "UPDATE " . $this->table_sesiones . " SET monto_cierre = :monto, fecha_cierre = NOW(), estado = 'cerrada', observaciones = :obs WHERE id_sesion = :id";
+   135→        $stmt = $this->conn->prepare($query); $stmt->bindParam(':monto', $monto_cierre); $stmt->bindParam(':obs', $obs); $stmt->bindParam(':id', $id_sesion);
+   136→        return $stmt->execute();
+   137→    }
+   138→}
+   139→================ Cita.php ================
+   140→<?php
+   141→class Cita {
+   142→    private $conn;
+   143→    private $table = 'citas';
+   144→
+   145→    public function __construct($db) {
+   146→        $this->conn = $db;
+   147→    }
+   148→
+   149→    // 1. OBTENER PRÓXIMAS CITAS (Para el Dashboard)
+   150→    public function obtenerProximasCitas($limit = 10) {
+   151→        $query = "SELECT c.id_cita, c.fecha_cita, c.estado, 
+   152→                         u.nombre as paciente, 
+   153→                         m_u.nombre as medico, 
+   154→                         e.nombre as especialidad
+   155→                  FROM " . $this->table . " c
+   156→                  JOIN usuarios u ON c.id_paciente = u.id_usuario
+   157→                  JOIN medicos m ON c.id_medico = m.id_medico
+   158→                  JOIN usuarios m_u ON m.id_usuario = m_u.id_usuario
+   159→                  JOIN especialidades e ON m.id_especialidad = e.id_especialidad
+   160→                  WHERE c.fecha_cita >= CURDATE() 
+   161→                  AND c.estado != 'Cancelada'
+   162→                  ORDER BY c.fecha_cita ASC
+   163→                  LIMIT :limit";
+   164→        $stmt = $this->conn->prepare($query);
+   165→        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+   166→        $stmt->execute();
+   167→        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+   168→    }
+   169→
+   170→    // 2. OBTENER HORARIOS OCUPADOS (Para validación visual en Modal)
+   171→    public function obtenerHorariosOcupados($id_medico, $fecha) {
+   172→        $query = "SELECT DATE_FORMAT(fecha_cita, '%H:%i') as hora 
+   173→                  FROM " . $this->table . " 
+   174→                  WHERE id_medico = :medico 
+   175→                  AND DATE(fecha_cita) = :fecha 
+   176→                  AND estado != 'Cancelada' 
+   177→                  AND estado != 'Finalizada'
+   178→                  ORDER BY fecha_cita ASC";
+   179→        $stmt = $this->conn->prepare($query);
+   180→        $stmt->bindParam(':medico', $id_medico);
+   181→        $stmt->bindParam(':fecha', $fecha);
+   182→        $stmt->execute();
+   183→        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+   184→    }
+   185→
+   186→    // 3. OBTENER DATOS PARA COBRO (Para módulo Caja)
+   187→    public function obtenerParaCobro($id) {
+   188→        $query = "SELECT c.id_cita, c.id_servicio, u.nombre as paciente, s.nombre_servicio, s.precio 
+   189→                  FROM " . $this->table . " c 
+   190→                  JOIN usuarios u ON c.id_paciente = u.id_usuario 
+   191→                  JOIN servicios s ON c.id_servicio = s.id_servicio 
+   192→                  WHERE c.id_cita = :id";
+   193→        $stmt = $this->conn->prepare($query);
+   194→        $stmt->bindParam(':id', $id);
+   195→        $stmt->execute();
+   196→        return $stmt->fetch(PDO::FETCH_ASSOC);
+   197→    }
+   198→
+   199→    // 4. LISTAR CITAS (Con filtros de fecha, estado y datos de pago)
+   200→    public function leer($fecha_desde = null, $fecha_hasta = null, $estado = null, $id_medico = null, $id_paciente = null) {
+   201→        $query = 'SELECT c.id_cita, c.fecha_cita, c.motivo, c.estado, c.id_medico, c.id_paciente, c.id_servicio,
+   202→                         c.diagnostico, c.prescripcion, c.tratamiento,
+   203→                         c.peso, c.talla, c.temperatura, c.presion_arterial,
+   204→                         c.fc, c.fr, c.sat_o2, c.dias_reposo, c.fecha_fin_reposo,
+   205→                         c.tiempo_enfermedad, c.motivo_consulta, c.enfermedad_actual,
+   206→                         c.antecedentes, c.examen_fisico, c.examenes_auxiliares,
+   207→                         c.fecha_control, c.id_interconsulta_especialidad,
+   208→                         u.nombre as paciente, u.email as paciente_email, u.telefono as paciente_telefono,
+   209→                         u.documento_identidad, u.fecha_nacimiento, u.sexo,
+   210→                         u.persona_responsable, u.tel_responsable, u.nro_historia_clinica,
+   211→                         m_u.nombre as medico, e.nombre as especialidad, m.colegiatura,
+   212→                         s.nombre_servicio, s.precio,
+   213→                         p.id_pago, p.metodo_pago, p.fecha_pago, p.monto as monto_pagado
+   214→                  FROM ' . $this->table . ' c
+   215→                  JOIN usuarios u ON c.id_paciente = u.id_usuario
+   216→                  JOIN medicos m ON c.id_medico = m.id_medico
+   217→                  JOIN usuarios m_u ON m.id_usuario = m_u.id_usuario
+   218→                  JOIN especialidades e ON m.id_especialidad = e.id_especialidad
+   219→                  LEFT JOIN servicios s ON c.id_servicio = s.id_servicio
+   220→                  LEFT JOIN pagos p ON c.id_cita = p.id_cita'; 
+   221→        
+   222→        $condiciones = [];
+   223→        
+   224→        // Filtro por rango de fechas
+   225→        if ($fecha_desde && $fecha_hasta) {
+   226→            $condiciones[] = 'DATE(c.fecha_cita) BETWEEN :desde AND :hasta';
+   227→        } elseif ($fecha_desde) {
+   228→            $condiciones[] = 'DATE(c.fecha_cita) >= :desde';
+   229→        }
+   230→
+   231→        if ($estado) $condiciones[] = 'c.estado = :estado';
+   232→        if ($id_medico) $condiciones[] = 'c.id_medico = :medico_id';
+   233→        if ($id_paciente) $condiciones[] = 'c.id_paciente = :paciente_id';
+   234→
+   235→        if (count($condiciones) > 0) $query .= ' WHERE ' . implode(' AND ', $condiciones);
+   236→        $query .= ' ORDER BY c.fecha_cita ASC';
+   237→        
+   238→        $stmt = $this->conn->prepare($query);
+   239→        
+   240→        if ($fecha_desde && $fecha_hasta) {
+   241→            $stmt->bindParam(':desde', $fecha_desde);
+   242→            $stmt->bindParam(':hasta', $fecha_hasta);
+   243→        } elseif ($fecha_desde) {
+   244→            $stmt->bindParam(':desde', $fecha_desde);
+   245→        }
+   246→
+   247→        if ($estado) $stmt->bindParam(':estado', $estado);
+   248→        if ($id_medico) $stmt->bindParam(':medico_id', $id_medico);
+   249→        if ($id_paciente) $stmt->bindParam(':paciente_id', $id_paciente);
+   250→        
+   251→        $stmt->execute();
+   252→        return $stmt;
+   253→    }
+   254→
+   255→    // 5. VERIFICAR DISPONIBILIDAD (Para evitar choques)
+   256→    public function verificarDisponibilidad($id_medico, $fecha_cita, $id_cita_excluir = null) {
+   257→        $sql = "SELECT COUNT(*) FROM " . $this->table . " 
+   258→                WHERE id_medico = :medico 
+   259→                AND fecha_cita = :fecha 
+   260→                AND estado != 'Cancelada' 
+   261→                AND estado != 'Finalizada'";
+   262→        
+   263→        if($id_cita_excluir) {
+   264→            $sql .= " AND id_cita != :id";
+   265→        }
+   266→        
+   267→        $stmt = $this->conn->prepare($sql);
+   268→        $stmt->bindParam(':medico', $id_medico);
+   269→        $stmt->bindParam(':fecha', $fecha_cita);
+   270→        
+   271→        if($id_cita_excluir) {
+   272→            $stmt->bindParam(':id', $id_cita_excluir);
+   273→        }
+   274→        
+   275→        $stmt->execute();
+   276→        return $stmt->fetchColumn() > 0;
+   277→    }
+   278→
+   279→    // --- CRUD BÁSICO ---
+   280→    public function crear($datos) {
+   281→        $query = 'INSERT INTO ' . $this->table . ' (id_paciente, id_medico, id_servicio, fecha_cita, motivo, estado) VALUES (:paciente, :medico, :servicio, :fecha, :motivo, "Pendiente")';
+   282→        $stmt = $this->conn->prepare($query);
+   283→        $stmt->bindParam(':paciente', $datos['id_paciente']); $stmt->bindParam(':medico', $datos['id_medico']); $stmt->bindParam(':servicio', $datos['id_servicio']); $stmt->bindParam(':fecha', $datos['fecha_cita']); $stmt->bindParam(':motivo', $datos['motivo']);
+   284→        return $stmt->execute();
+   285→    }
+   286→
+   287→    public function actualizar($datos) {
+   288→        $query = 'UPDATE ' . $this->table . ' SET id_medico = :medico, id_servicio = :servicio, fecha_cita = :fecha, motivo = :motivo, estado = :estado WHERE id_cita = :id';
+   289→        $stmt = $this->conn->prepare($query);
+   290→        $stmt->bindParam(':id', $datos['id_cita']); $stmt->bindParam(':medico', $datos['id_medico']); $stmt->bindParam(':servicio', $datos['id_servicio']); $stmt->bindParam(':fecha', $datos['fecha_cita']); $stmt->bindParam(':motivo', $datos['motivo']); $stmt->bindParam(':estado', $datos['estado']);
+   291→        return $stmt->execute();
+   292→    }
+   293→
+   294→    public function guardarProgresoAtencion($id, $datos) {
+   295→        $query = "UPDATE " . $this->table . " SET
+   296→            peso = :peso, talla = :talla, presion_arterial = :presion,
+   297→            temperatura = :temp, fc = :fc, fr = :fr, sat_o2 = :sat_o2,
+   298→            tiempo_enfermedad = :tiempo_enf, motivo_consulta = :motivo_consulta,
+   299→            enfermedad_actual = :enf_actual, antecedentes = :antecedentes,
+   300→            examen_fisico = :examen_fisico, examenes_auxiliares = :examenes_aux,
+   301→            diagnostico = :diagnostico, prescripcion = :prescripcion,
+   302→            tratamiento = :tratamiento, dias_reposo = :dias,
+   303→            fecha_fin_reposo = :fecha_fin, fecha_control = :fecha_control,
+   304→            id_interconsulta_especialidad = :interconsulta
+   305→            WHERE id_cita = :id";
+   306→        $stmt = $this->conn->prepare($query);
+   307→        $stmt->bindParam(':id',              $id);
+   308→        $stmt->bindParam(':peso',            $datos['peso']);
+   309→        $stmt->bindParam(':talla',           $datos['talla']);
+   310→        $stmt->bindParam(':presion',         $datos['presion_arterial']);
+   311→        $stmt->bindParam(':temp',            $datos['temperatura']);
+   312→        $stmt->bindParam(':fc',              $datos['fc']);
+   313→        $stmt->bindParam(':fr',              $datos['fr']);
+   314→        $stmt->bindParam(':sat_o2',          $datos['sat_o2']);
+   315→        $stmt->bindParam(':tiempo_enf',      $datos['tiempo_enfermedad']);
+   316→        $stmt->bindParam(':motivo_consulta', $datos['motivo_consulta']);
+   317→        $stmt->bindParam(':enf_actual',      $datos['enfermedad_actual']);
+   318→        $stmt->bindParam(':antecedentes',    $datos['antecedentes']);
+   319→        $stmt->bindParam(':examen_fisico',   $datos['examen_fisico']);
+   320→        $stmt->bindParam(':examenes_aux',    $datos['examenes_auxiliares']);
+   321→        $stmt->bindParam(':diagnostico',     $datos['diagnostico']);
+   322→        $stmt->bindParam(':prescripcion',    $datos['prescripcion']);
+   323→        $stmt->bindParam(':tratamiento',     $datos['tratamiento']);
+   324→        $stmt->bindParam(':dias',            $datos['dias_reposo']);
+   325→        $stmt->bindParam(':fecha_fin',       $datos['fecha_fin_reposo']);
+   326→        $stmt->bindParam(':fecha_control',   $datos['fecha_control']);
+   327→        $stmt->bindParam(':interconsulta',   $datos['id_interconsulta_especialidad']);
+   328→        return $stmt->execute();
+   329→    }
+   330→
+   331→    public function finalizarAtencion($id, $datos) {
+   332→        $query = "UPDATE " . $this->table . " SET
+   333→            peso = :peso, talla = :talla, presion_arterial = :presion,
+   334→            temperatura = :temp, fc = :fc, fr = :fr, sat_o2 = :sat_o2,
+   335→            tiempo_enfermedad = :tiempo_enf, motivo_consulta = :motivo_consulta,
+   336→            enfermedad_actual = :enf_actual, antecedentes = :antecedentes,
+   337→            examen_fisico = :examen_fisico, examenes_auxiliares = :examenes_aux,
+   338→            diagnostico = :diagnostico, prescripcion = :prescripcion,
+   339→            tratamiento = :tratamiento, dias_reposo = :dias,
+   340→            fecha_fin_reposo = :fecha_fin, fecha_control = :fecha_control,
+   341→            id_interconsulta_especialidad = :interconsulta,
+   342→            estado = 'Finalizada'
+   343→            WHERE id_cita = :id";
+   344→        $stmt = $this->conn->prepare($query);
+   345→        $stmt->bindParam(':id',              $id);
+   346→        $stmt->bindParam(':peso',            $datos['peso']);
+   347→        $stmt->bindParam(':talla',           $datos['talla']);
+   348→        $stmt->bindParam(':presion',         $datos['presion_arterial']);
+   349→        $stmt->bindParam(':temp',            $datos['temperatura']);
+   350→        $stmt->bindParam(':fc',              $datos['fc']);
+   351→        $stmt->bindParam(':fr',              $datos['fr']);
+   352→        $stmt->bindParam(':sat_o2',          $datos['sat_o2']);
+   353→        $stmt->bindParam(':tiempo_enf',      $datos['tiempo_enfermedad']);
+   354→        $stmt->bindParam(':motivo_consulta', $datos['motivo_consulta']);
+   355→        $stmt->bindParam(':enf_actual',      $datos['enfermedad_actual']);
+   356→        $stmt->bindParam(':antecedentes',    $datos['antecedentes']);
+   357→        $stmt->bindParam(':examen_fisico',   $datos['examen_fisico']);
+   358→        $stmt->bindParam(':examenes_aux',    $datos['examenes_auxiliares']);
+   359→        $stmt->bindParam(':diagnostico',     $datos['diagnostico']);
+   360→        $stmt->bindParam(':prescripcion',    $datos['prescripcion']);
+   361→        $stmt->bindParam(':tratamiento',     $datos['tratamiento']);
+   362→        $stmt->bindParam(':dias',            $datos['dias_reposo']);
+   363→        $stmt->bindParam(':fecha_fin',       $datos['fecha_fin_reposo']);
+   364→        $stmt->bindParam(':fecha_control',   $datos['fecha_control']);
+   365→        $stmt->bindParam(':interconsulta',   $datos['id_interconsulta_especialidad']);
+   366→        return $stmt->execute();
+   367→    }
+   368→
+   369→    // Obtener detalle completo de una cita (para AJAX pre-carga del modal)
+   370→    public function obtenerDetalleCita($id_cita) {
+   371→        $query = "SELECT c.*, 
+   372→                         u.nombre as paciente, u.documento_identidad, u.telefono as paciente_telefono,
+   373→                         u.fecha_nacimiento, u.sexo, u.persona_responsable, u.tel_responsable, u.nro_historia_clinica,
+   374→                         u.alergias, u.enfermedades_cronicas, u.grupo_sanguineo,
+   375→                         m_u.nombre as medico, e.nombre as especialidad,
+   376→                         s.nombre_servicio
+   377→                  FROM citas c
+   378→                  JOIN usuarios u ON c.id_paciente = u.id_usuario
+   379→                  JOIN medicos m ON c.id_medico = m.id_medico
+   380→                  JOIN usuarios m_u ON m.id_usuario = m_u.id_usuario
+   381→                  JOIN especialidades e ON m.id_especialidad = e.id_especialidad
+   382→                  LEFT JOIN servicios s ON c.id_servicio = s.id_servicio
+   383→                  WHERE c.id_cita = :id";
+   384→        $stmt = $this->conn->prepare($query);
+   385→        $stmt->bindParam(':id', $id_cita);
+   386→        $stmt->execute();
+   387→        return $stmt->fetch(PDO::FETCH_ASSOC);
+   388→    }
+   389→
+   390→    public function eliminar($id) {
+   391→        $query = 'UPDATE ' . $this->table . ' SET estado = "Cancelada" WHERE id_cita = :id';
+   392→        $stmt = $this->conn->prepare($query); $stmt->bindParam(':id', $id); return $stmt->execute();
+   393→    }
+   394→
+   395→    // --- ESTADÍSTICAS ---
+   396→    public function contarTotal($id_medico = null, $id_paciente = null) {
+   397→        $query = "SELECT COUNT(*) as total FROM " . $this->table; $condiciones = [];
+   398→        if ($id_medico) $condiciones[] = "id_medico = :medico"; if ($id_paciente) $condiciones[] = "id_paciente = :paciente";
+   399→        if (count($condiciones) > 0) $query .= " WHERE " . implode(' AND ', $condiciones);
+   400→        $stmt = $this->conn->prepare($query);
+   401→        if ($id_medico) $stmt->bindParam(':medico', $id_medico); if ($id_paciente) $stmt->bindParam(':paciente', $id_paciente);
+   402→        $stmt->execute(); $row = $stmt->fetch(PDO::FETCH_ASSOC); return $row['total'];
+   403→    }
+   404→
+   405→    public function obtenerEstadisticasEstado($id_medico = null, $id_paciente = null) {
+   406→        $query = "SELECT estado, COUNT(*) as cantidad FROM " . $this->table; $condiciones = [];
+   407→        if ($id_medico) $condiciones[] = "id_medico = :medico"; if ($id_paciente) $condiciones[] = "id_paciente = :paciente";
+   408→        if (count($condiciones) > 0) $query .= " WHERE " . implode(' AND ', $condiciones);
+   409→        $query .= " GROUP BY estado"; $stmt = $this->conn->prepare($query);
+   410→        if ($id_medico) $stmt->bindParam(':medico', $id_medico); if ($id_paciente) $stmt->bindParam(':paciente', $id_paciente);
+   411→        $stmt->execute(); return $stmt->fetchAll(PDO::FETCH_ASSOC);
+   412→    }
+   413→
+   414→    // --- NUEVAS ESTADÍSTICAS OPERATIVAS ---
+   415→
+   416→    // Citas pendientes del mes actual
+   417→    public function contarCitasPendientesMes($id_medico = null) {
+   418→        $query = "SELECT COUNT(*) as total FROM " . $this->table
+   419→               . " WHERE estado = 'Pendiente'"
+   420→               . " AND YEAR(fecha_cita) = YEAR(CURDATE())"
+   421→               . " AND MONTH(fecha_cita) = MONTH(CURDATE())";
+   422→        if ($id_medico) $query .= " AND id_medico = :medico";
+   423→        $stmt = $this->conn->prepare($query);
+   424→        if ($id_medico) $stmt->bindParam(':medico', $id_medico);
+   425→        $stmt->execute();
+   426→        return $stmt->fetchColumn();
+   427→    }
+   428→
+   429→    // Citas pendientes del día de hoy
+   430→    public function contarCitasPendientesHoy($id_medico = null) {
+   431→        $query = "SELECT COUNT(*) as total FROM " . $this->table
+   432→               . " WHERE estado = 'Pendiente'"
+   433→               . " AND DATE(fecha_cita) = CURDATE()";
+   434→        if ($id_medico) $query .= " AND id_medico = :medico";
+   435→        $stmt = $this->conn->prepare($query);
+   436→        if ($id_medico) $stmt->bindParam(':medico', $id_medico);
+   437→        $stmt->execute();
+   438→        return $stmt->fetchColumn();
+   439→    }
+   440→
+   441→    // Servicios realizados hoy (Finalizadas + con pago registrado)
+   442→    public function contarServiciosRealizadosHoy($id_medico = null) {
+   443→        $query = "SELECT COUNT(*) as total FROM " . $this->table . " c"
+   444→               . " INNER JOIN pagos p ON c.id_cita = p.id_cita"
+   445→               . " WHERE c.estado = 'Finalizada'"
+   446→               . " AND DATE(p.fecha_pago) = CURDATE()";
+   447→        if ($id_medico) $query .= " AND c.id_medico = :medico";
+   448→        $stmt = $this->conn->prepare($query);
+   449→        if ($id_medico) $stmt->bindParam(':medico', $id_medico);
+   450→        $stmt->execute();
+   451→        return $stmt->fetchColumn();
+   452→    }
+   453→}
+   454→================ Configuracion.php ================
+   455→<?php
+   456→class Configuracion {
+   457→    private $conn;
+   458→    private $table = 'configuracion';
+   459→
+   460→    public function __construct($db) {
+   461→        $this->conn = $db;
+   462→    }
+   463→
+   464→    // OBTENER DATOS
+   465→    public function obtener() {
+   466→        $query = "SELECT * FROM " . $this->table . " WHERE id = 1";
+   467→        $stmt = $this->conn->prepare($query);
+   468→        $stmt->execute();
+   469→        return $stmt->fetch(PDO::FETCH_ASSOC);
+   470→    }
+   471→
+   472→    // ACTUALIZAR DATOS (Incluyendo Logo)
+   473→    public function actualizar($datos) {
+   474→        // Construimos la consulta base
+   475→        $query = "UPDATE " . $this->table . " 
+   476→                  SET nombre_clinica = :nombre, 
+   477→                      direccion = :direccion, 
+   478→                      telefono = :telefono, 
+   479→                      email = :email, 
+   480→                      moneda = :moneda";
+   481→        
+   482→        // Si se subió un logo nuevo, agregamos ese campo a la actualización
+   483→        if (!empty($datos['logo'])) {
+   484→            $query .= ", logo = :logo";
+   485→        }
+   486→
+   487→        $query .= " WHERE id = 1";
+   488→        
+   489→        $stmt = $this->conn->prepare($query);
+   490→        
+   491→        $stmt->bindParam(':nombre', $datos['nombre']);
+   492→        $stmt->bindParam(':direccion', $datos['direccion']);
+   493→        $stmt->bindParam(':telefono', $datos['telefono']);
+   494→        $stmt->bindParam(':email', $datos['email']);
+   495→        $stmt->bindParam(':moneda', $datos['moneda']);
+   496→
+   497→        if (!empty($datos['logo'])) {
+   498→            $stmt->bindParam(':logo', $datos['logo']);
+   499→        }
+   500→
+   501→        return $stmt->execute();
+   502→    }
+   503→}
+   504→================ Especialidad.php ================
+   505→<?php
+   506→class Especialidad {
+   507→    private $conn;
+   508→    private $table = 'especialidades';
+   509→
+   510→    public function __construct($db) {
+   511→        $this->conn = $db;
+   512→    }
+   513→
+   514→    // 1. LEER (Incluye estado y conteo de médicos)
+   515→    public function leer() {
+   516→        $query = 'SELECT e.id_especialidad, e.nombre, e.estado,
+   517→                         (SELECT COUNT(*) FROM medicos m WHERE m.id_especialidad = e.id_especialidad) as total_medicos 
+   518→                  FROM ' . $this->table . ' e
+   519→                  ORDER BY e.nombre ASC';
+   520→        
+   521→        $stmt = $this->conn->prepare($query);
+   522→        $stmt->execute();
+   523→        return $stmt;
+   524→    }
+   525→
+   526→    // 2. CREAR (Estado por defecto 1 = Activo)
+   527→    public function crear($nombre) {
+   528→        $query = 'INSERT INTO ' . $this->table . ' (nombre, estado) VALUES (:nombre, 1)';
+   529→        $stmt = $this->conn->prepare($query);
+   530→        $stmt->bindParam(':nombre', $nombre);
+   531→        return $stmt->execute();
+   532→    }
+   533→
+   534→    // 3. ACTUALIZAR
+   535→    public function actualizar($id, $nombre) {
+   536→        $query = 'UPDATE ' . $this->table . ' SET nombre = :nombre WHERE id_especialidad = :id';
+   537→        $stmt = $this->conn->prepare($query);
+   538→        $stmt->bindParam(':nombre', $nombre);
+   539→        $stmt->bindParam(':id', $id);
+   540→        return $stmt->execute();
+   541→    }
+   542→
+   543→    // 4. CAMBIAR ESTADO (PARA ACTIVAR/DESACTIVAR)
+   544→    public function cambiarEstado($id, $nuevoEstado) {
+   545→        $query = 'UPDATE ' . $this->table . ' SET estado = :estado WHERE id_especialidad = :id';
+   546→        $stmt = $this->conn->prepare($query);
+   547→        $stmt->bindParam(':estado', $nuevoEstado);
+   548→        $stmt->bindParam(':id', $id);
+   549→        return $stmt->execute();
+   550→    }
+   551→
+   552→    // 5. ELIMINAR (Físico - Opcional)
+   553→    public function eliminar($id) {
+   554→        $query = 'DELETE FROM ' . $this->table . ' WHERE id_especialidad = :id';
+   555→        $stmt = $this->conn->prepare($query);
+   556→        $stmt->bindParam(':id', $id);
+   557→        return $stmt->execute();
+   558→    }
+   559→}
+   560→================ Medicamento.php ================
+   561→<?php
+   562→class Medicamento {
+   563→    private $conn;
+   564→    private $table = 'medicamentos';
+   565→
+   566→    public function __construct($db) {
+   567→        $this->conn = $db;
+   568→    }
+   569→
+   570→    // 1. LISTAR
+   571→    public function leer() {
+   572→        $query = "SELECT * FROM " . $this->table . " ORDER BY nombre_comercial ASC";
+   573→        $stmt = $this->conn->prepare($query);
+   574→        $stmt->execute();
+   575→        return $stmt;
+   576→    }
+   577→
+   578→    // 2. CREAR
+   579→    public function crear($datos) {
+   580→        $query = "INSERT INTO " . $this->table . " (nombre_comercial, nombre_generico, presentacion, stock) 
+   581→                  VALUES (:comercial, :generico, :presentacion, :stock)";
+   582→        $stmt = $this->conn->prepare($query);
+   583→        $stmt->bindParam(':comercial', $datos['nombre_comercial']);
+   584→        $stmt->bindParam(':generico', $datos['nombre_generico']);
+   585→        $stmt->bindParam(':presentacion', $datos['presentacion']);
+   586→        $stmt->bindParam(':stock', $datos['stock']);
+   587→        return $stmt->execute();
+   588→    }
+   589→
+   590→    // 3. ACTUALIZAR
+   591→    public function actualizar($datos) {
+   592→        $query = "UPDATE " . $this->table . " 
+   593→                  SET nombre_comercial = :comercial, 
+   594→                      nombre_generico = :generico, 
+   595→                      presentacion = :presentacion, 
+   596→                      stock = :stock,
+   597→                      estado = :estado
+   598→                  WHERE id_medicamento = :id";
+   599→        
+   600→        $stmt = $this->conn->prepare($query);
+   601→        $stmt->bindParam(':id', $datos['id']);
+   602→        $stmt->bindParam(':comercial', $datos['nombre_comercial']);
+   603→        $stmt->bindParam(':generico', $datos['nombre_generico']);
+   604→        $stmt->bindParam(':presentacion', $datos['presentacion']);
+   605→        $stmt->bindParam(':stock', $datos['stock']);
+   606→        $stmt->bindParam(':estado', $datos['estado']);
+   607→        return $stmt->execute();
+   608→    }
+   609→
+   610→    // 4. ELIMINAR
+   611→    public function eliminar($id) {
+   612→        $query = "DELETE FROM " . $this->table . " WHERE id_medicamento = :id";
+   613→        $stmt = $this->conn->prepare($query);
+   614→        $stmt->bindParam(':id', $id);
+   615→        return $stmt->execute();
+   616→    }
+   617→}
+   618→================ Medico.php ================
+   619→<?php
+   620→class Medico {
+   621→    private $conn;
+   622→    private $table = 'medicos';
+   623→
+   624→    public function __construct($db) {
+   625→        $this->conn = $db;
+   626→    }
+   627→
+   628→    // 1. LEER
+   629→    public function leer() {
+   630→        $query = 'SELECT m.id_medico, m.colegiatura, m.id_especialidad,
+   631→                         u.id_usuario, u.nombre, u.email, u.telefono, u.estado,
+   632→                         e.nombre as especialidad
+   633→                  FROM ' . $this->table . ' m
+   634→                  JOIN usuarios u ON m.id_usuario = u.id_usuario
+   635→                  JOIN especialidades e ON m.id_especialidad = e.id_especialidad
+   636→                  ORDER BY u.nombre ASC';
+   637→        $stmt = $this->conn->prepare($query);
+   638→        $stmt->execute();
+   639→        return $stmt;
+   640→    }
+   641→
+   642→    // 2. OBTENER POR ID
+   643→    public function obtenerPorId($id) {
+   644→        $query = "SELECT m.id_medico, m.colegiatura, u.nombre, u.email, e.nombre as especialidad 
+   645→                  FROM " . $this->table . " m 
+   646→                  JOIN usuarios u ON m.id_usuario = u.id_usuario 
+   647→                  JOIN especialidades e ON m.id_especialidad = e.id_especialidad 
+   648→                  WHERE m.id_medico = :id";
+   649→        $stmt = $this->conn->prepare($query);
+   650→        $stmt->bindParam(':id', $id);
+   651→        $stmt->execute();
+   652→        return $stmt->fetch(PDO::FETCH_ASSOC);
+   653→    }
+   654→
+   655→    // 3. VERIFICAR HORARIO LABORAL
+   656→    // Primero revisa si hay un horario específico para esa fecha exacta.
+   657→    // Si no hay, cae al horario recurrente por día de la semana.
+   658→    public function verificaHorarioLaboral($id_medico, $fecha_hora) {
+   659→        $dias = [
+   660→            'Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miércoles',
+   661→            'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado', 'Sunday' => 'Domingo'
+   662→        ];
+   663→
+   664→        $timestamp  = strtotime($fecha_hora);
+   665→        $dia_ingles = date('l', $timestamp);
+   666→        $dia_es     = $dias[$dia_ingles] ?? '';
+   667→        $hora_cita  = date('H:i:s', $timestamp);
+   668→        $fecha_cita = date('Y-m-d', $timestamp);
+   669→
+   670→        // 1. ¿Existe horario ESPECÍFICO para exactamente esa fecha?
+   671→        $sqlEspecifico = "SELECT COUNT(*) FROM horarios_medicos 
+   672→                          WHERE id_medico = :id 
+   673→                          AND fecha_especifica = :fecha 
+   674→                          AND :hora >= hora_inicio 
+   675→                          AND :hora < hora_fin";
+   676→        $stmtE = $this->conn->prepare($sqlEspecifico);
+   677→        $stmtE->bindParam(':id',    $id_medico);
+   678→        $stmtE->bindParam(':fecha', $fecha_cita);
+   679→        $stmtE->bindParam(':hora',  $hora_cita);
+   680→        $stmtE->execute();
+   681→
+   682→        if ($stmtE->fetchColumn() > 0) {
+   683→            return true; // Hay turno específico para ese día → válido
+   684→        }
+   685→
+   686→        // 2. ¿Existe algún horario ESPECÍFICO para ese mismo día (fecha)?
+   687→        //    Si existe pero no coincide la hora, bloqueamos (no caemos al recurrente)
+   688→        $sqlTieneEspecifico = "SELECT COUNT(*) FROM horarios_medicos 
+   689→                               WHERE id_medico = :id 
+   690→                               AND fecha_especifica = :fecha";
+   691→        $stmtT = $this->conn->prepare($sqlTieneEspecifico);
+   692→        $stmtT->bindParam(':id',    $id_medico);
+   693→        $stmtT->bindParam(':fecha', $fecha_cita);
+   694→        $stmtT->execute();
+   695→
+   696→        if ($stmtT->fetchColumn() > 0) {
+   697→            return false; // Hay turnos específicos ese día pero ninguno cubre la hora
+   698→        }
+   699→
+   700→        // 3. Sin horario específico: usar el horario RECURRENTE del día de la semana
+   701→        $sqlRecurrente = "SELECT COUNT(*) FROM horarios_medicos 
+   702→                          WHERE id_medico = :id 
+   703→                          AND dia_semana = :dia 
+   704→                          AND fecha_especifica IS NULL
+   705→                          AND :hora >= hora_inicio 
+   706→                          AND :hora < hora_fin";
+   707→        $stmtR = $this->conn->prepare($sqlRecurrente);
+   708→        $stmtR->bindParam(':id',  $id_medico);
+   709→        $stmtR->bindParam(':dia', $dia_es);
+   710→        $stmtR->bindParam(':hora', $hora_cita);
+   711→        $stmtR->execute();
+   712→
+   713→        return $stmtR->fetchColumn() > 0;
+   714→    }
+   715→
+   716→    // 4. CREAR
+   717→    public function crear($datos) {
+   718→        try {
+   719→            $this->conn->beginTransaction();
+   720→            $queryUser = "INSERT INTO usuarios (nombre, email, password, id_rol, estado) VALUES (:nombre, :email, :password, 2, 1)";
+   721→            $stmtUser = $this->conn->prepare($queryUser);
+   722→            $passHash = password_hash($datos['password'], PASSWORD_BCRYPT);
+   723→            $stmtUser->bindParam(':nombre',   $datos['nombre']);
+   724→            $stmtUser->bindParam(':email',    $datos['email']);
+   725→            $stmtUser->bindParam(':password', $passHash);
+   726→            $stmtUser->execute();
+   727→            $id_usuario = $this->conn->lastInsertId();
+   728→            $queryMedico = "INSERT INTO medicos (id_usuario, id_especialidad, colegiatura) VALUES (:id_usuario, :id_especialidad, :colegiatura)";
+   729→            $stmtMedico = $this->conn->prepare($queryMedico);
+   730→            $stmtMedico->bindParam(':id_usuario',     $id_usuario);
+   731→            $stmtMedico->bindParam(':id_especialidad', $datos['id_especialidad']);
+   732→            $stmtMedico->bindParam(':colegiatura',    $datos['colegiatura']);
+   733→            $stmtMedico->execute();
+   734→            $this->conn->commit();
+   735→            return true;
+   736→        } catch (Exception $e) {
+   737→            $this->conn->rollBack();
+   738→            return false;
+   739→        }
+   740→    }
+   741→
+   742→    // 5. ACTUALIZAR
+   743→    public function actualizar($datos) {
+   744→        try {
+   745→            $this->conn->beginTransaction();
+   746→            $sqlUser = "UPDATE usuarios SET nombre = :nombre, email = :email";
+   747→            if (!empty($datos['password'])) { $sqlUser .= ", password = :password"; }
+   748→            $sqlUser .= " WHERE id_usuario = :id_usuario";
+   749→            $stmtUser = $this->conn->prepare($sqlUser);
+   750→            $stmtUser->bindParam(':nombre',     $datos['nombre']);
+   751→            $stmtUser->bindParam(':email',      $datos['email']);
+   752→            $stmtUser->bindParam(':id_usuario', $datos['id_usuario']);
+   753→            if (!empty($datos['password'])) {
+   754→                $passHash = password_hash($datos['password'], PASSWORD_BCRYPT);
+   755→                $stmtUser->bindParam(':password', $passHash);
+   756→            }
+   757→            $stmtUser->execute();
+   758→            $sqlMedico = "UPDATE medicos SET id_especialidad = :id_especialidad, colegiatura = :colegiatura WHERE id_medico = :id_medico";
+   759→            $stmtMedico = $this->conn->prepare($sqlMedico);
+   760→            $stmtMedico->bindParam(':id_especialidad', $datos['id_especialidad']);
+   761→            $stmtMedico->bindParam(':colegiatura',     $datos['colegiatura']);
+   762→            $stmtMedico->bindParam(':id_medico',       $datos['id_medico']);
+   763→            $stmtMedico->execute();
+   764→            $this->conn->commit();
+   765→            return true;
+   766→        } catch (Exception $e) {
+   767→            $this->conn->rollBack();
+   768→            return false;
+   769→        }
+   770→    }
+   771→
+   772→    // 6. CAMBIAR ESTADO
+   773→    public function cambiarEstado($id_usuario, $nuevoEstado) {
+   774→        $query = 'UPDATE usuarios SET estado = :estado WHERE id_usuario = :id';
+   775→        $stmt = $this->conn->prepare($query);
+   776→        $stmt->bindParam(':estado', $nuevoEstado);
+   777→        $stmt->bindParam(':id',     $id_usuario);
+   778→        return $stmt->execute();
+   779→    }
+   780→
+   781→    // --- HORARIOS ---
+   782→
+   783→    // Horarios recurrentes (sin fecha específica)
+   784→    public function obtenerHorariosRecurrentes($id_medico) {
+   785→        $orden = "FIELD(dia_semana,'Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo')";
+   786→        $query = "SELECT * FROM horarios_medicos 
+   787→                  WHERE id_medico = :id_medico AND fecha_especifica IS NULL 
+   788→                  ORDER BY $orden, hora_inicio";
+   789→        $stmt = $this->conn->prepare($query);
+   790→        $stmt->bindParam(':id_medico', $id_medico);
+   791→        $stmt->execute();
+   792→        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+   793→    }
+   794→
+   795→    // Horarios por fecha específica
+   796→    public function obtenerHorariosEspecificos($id_medico) {
+   797→        $query = "SELECT * FROM horarios_medicos 
+   798→                  WHERE id_medico = :id_medico AND fecha_especifica IS NOT NULL 
+   799→                  ORDER BY fecha_especifica ASC, hora_inicio ASC";
+   800→        $stmt = $this->conn->prepare($query);
+   801→        $stmt->bindParam(':id_medico', $id_medico);

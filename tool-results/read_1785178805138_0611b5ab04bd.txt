@@ -1,0 +1,913 @@
+     1→
+     2→================ CitaController.php ================
+     3→<?php
+     4→require_once APP_ROOT . '/config/Database.php';
+     5→require_once APP_ROOT . '/models/Cita.php';
+     6→require_once APP_ROOT . '/models/Medico.php';
+     7→require_once APP_ROOT . '/models/Paciente.php';
+     8→require_once APP_ROOT . '/models/Servicio.php';
+     9→
+    10→class CitaController {
+    11→    
+    12→    public function index() {
+    13→        if (session_status() === PHP_SESSION_NONE) session_start();
+    14→        $database = new Database(); $db = $database->connect();
+    15→        
+    16→        $citaModel = new Cita($db);
+    17→        $medicoModel = new Medico($db);
+    18→        $pacienteModel = new Paciente($db);
+    19→        $servicioModel = new Servicio($db);
+    20→        
+    21→        $rol = $_SESSION['user_role_id'] ?? 0;
+    22→        $userId = $_SESSION['user_id'];
+    23→        $medicoId = $_SESSION['medico_id'] ?? null;
+    24→
+    25→        // Filtros de fecha (Rango)
+    26→        $fecha_desde = $_GET['fecha_desde'] ?? date('Y-m-01');
+    27→        $fecha_hasta = $_GET['fecha_hasta'] ?? date('Y-m-t');
+    28→        
+    29→        $estado = $_GET['estado'] ?? null;
+    30→        if($estado == "") $estado = null;
+    31→
+    32→        // Consultar según Rol
+    33→        if ($rol == 1 || $rol == 4) { // Admin y Recepción
+    34→            $resultado = $citaModel->leer($fecha_desde, $fecha_hasta, $estado);
+    35→            $citasPendientesMes     = $citaModel->contarCitasPendientesMes();
+    36→            $citasPendientesHoy     = $citaModel->contarCitasPendientesHoy();
+    37→            $serviciosRealizadosHoy = $citaModel->contarServiciosRealizadosHoy();
+    38→        } elseif ($rol == 2) { // Médico
+    39→            $resultado = $citaModel->leer($fecha_desde, $fecha_hasta, $estado, $medicoId);
+    40→            $citasPendientesMes     = $citaModel->contarCitasPendientesMes($medicoId);
+    41→            $citasPendientesHoy     = $citaModel->contarCitasPendientesHoy($medicoId);
+    42→            $serviciosRealizadosHoy = $citaModel->contarServiciosRealizadosHoy($medicoId);
+    43→        } elseif ($rol == 3) { // Paciente
+    44→            $resultado = $citaModel->leer(null, null, null, null, $userId);
+    45→            $citasPendientesMes     = $citaModel->contarCitasPendientesMes();
+    46→            $citasPendientesHoy     = $citaModel->contarCitasPendientesHoy();
+    47→            $serviciosRealizadosHoy = $citaModel->contarServiciosRealizadosHoy();
+    48→        } else {
+    49→            $resultado = null;
+    50→            $citasPendientesMes = $citasPendientesHoy = $serviciosRealizadosHoy = 0;
+    51→        }
+    52→
+    53→        // Personal de turno hoy
+    54→        $personalDeTurno = $medicoModel->obtenerPersonalDeTurnoHoy();
+    55→
+    56→        $medicos = $medicoModel->leer();
+    57→        $pacientes = $pacienteModel->leer();
+    58→        $servicios = $servicioModel->leer();
+    59→
+    60→        require_once APP_ROOT . '/views/admin/citas.php';
+    61→    }
+    62→
+    63→
+    64→    // --- AJAX: Verificar disponibilidad horaria ---
+    65→    public function verificarHorarios() {
+    66→        if (isset($_GET['id_medico']) && isset($_GET['fecha'])) {
+    67→            $database = new Database(); $db = $database->connect(); $citaModel = new Cita($db);
+    68→            
+    69→            $ocupados = $citaModel->obtenerHorariosOcupados($_GET['id_medico'], $_GET['fecha']);
+    70→            
+    71→            header('Content-Type: application/json');
+    72→            echo json_encode($ocupados);
+    73→            exit;
+    74→        }
+    75→    }
+    76→
+    77→    public function guardar() {
+    78→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    79→            $database = new Database(); $db = $database->connect();
+    80→            $citaModel = new Cita($db);
+    81→            $medicoModel = new Medico($db);
+    82→
+    83→            $id_medico = $_POST['id_medico'];
+    84→            $fecha_cita = $_POST['fecha'] . ' ' . $_POST['hora'];
+    85→
+    86→            // 1. Validar horario laboral
+    87→            if (!$medicoModel->verificaHorarioLaboral($id_medico, $fecha_cita)) {
+    88→                header('Location: ' . BASE_URL . '/citas?msg=fuera_horario'); exit;
+    89→            }
+    90→            // 2. Validar que no esté ocupado
+    91→            if ($citaModel->verificarDisponibilidad($id_medico, $fecha_cita)) {
+    92→                header('Location: ' . BASE_URL . '/citas?msg=ocupado'); exit;
+    93→            }
+    94→
+    95→            $datos = [
+    96→                'id_paciente' => $_POST['id_paciente'], 'id_medico' => $id_medico,
+    97→                'id_servicio' => $_POST['id_servicio'], 'fecha_cita' => $fecha_cita,
+    98→                'motivo' => $_POST['motivo']
+    99→            ];
+   100→
+   101→            if($citaModel->crear($datos)) header('Location: ' . BASE_URL . '/citas?msg=creado');
+   102→            else header('Location: ' . BASE_URL . '/citas?msg=error');
+   103→        }
+   104→    }
+   105→
+   106→    public function actualizar() {
+   107→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   108→            $database = new Database(); $db = $database->connect(); $citaModel = new Cita($db);
+   109→            $datos = [
+   110→                'id_cita' => $_POST['id_cita'], 'id_medico' => $_POST['id_medico'],
+   111→                'id_servicio' => $_POST['id_servicio'],
+   112→                'fecha_cita' => $_POST['fecha'] . ' ' . $_POST['hora'],
+   113→                'motivo' => $_POST['motivo'], 'estado' => $_POST['estado']
+   114→            ];
+   115→            if($citaModel->actualizar($datos)) header('Location: ' . BASE_URL . '/citas?msg=actualizado');
+   116→            else header('Location: ' . BASE_URL . '/citas?msg=error');
+   117→        }
+   118→    }
+   119→
+   120→    public function atender() {
+   121→        if (!isset($_GET['id'])) {
+   122→            header('Location: ' . BASE_URL . '/citas');
+   123→            exit;
+   124→        }
+   125→        $database = new Database(); $db = $database->connect();
+   126→        
+   127→        // El layout se renderiza en atencion_medica.php
+   128→        require_once APP_ROOT . '/views/admin/atencion_medica.php';
+   129→    }
+   130→
+   131→
+   132→    public function finalizar() {
+   133→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   134→            $database = new Database(); $db = $database->connect(); $citaModel = new Cita($db);
+   135→            $dias = intval($_POST['dias_reposo'] ?? 0);
+   136→            $fecha_fin = ($dias > 0) ? date('Y-m-d', strtotime("+{$dias} days")) : null;
+   137→            $fecha_control = !empty($_POST['fecha_control']) ? $_POST['fecha_control'] : null;
+   138→            $interconsulta = !empty($_POST['id_interconsulta_especialidad']) ? (int)$_POST['id_interconsulta_especialidad'] : null;
+   139→            
+   140→            // Fix for numeric empty fields
+   141→            $peso        = (isset($_POST['peso']) && $_POST['peso'] !== '') ? $_POST['peso'] : null;
+   142→            $talla       = (isset($_POST['talla']) && $_POST['talla'] !== '') ? $_POST['talla'] : null;
+   143→            $temperatura = (isset($_POST['temperatura']) && $_POST['temperatura'] !== '') ? $_POST['temperatura'] : null;
+   144→            $fc          = (isset($_POST['fc']) && $_POST['fc'] !== '') ? $_POST['fc'] : null;
+   145→            $fr          = (isset($_POST['fr']) && $_POST['fr'] !== '') ? $_POST['fr'] : null;
+   146→            $sat_o2      = (isset($_POST['sat_o2']) && $_POST['sat_o2'] !== '') ? $_POST['sat_o2'] : null;
+   147→
+   148→            $datos = [
+   149→                'peso'                        => $peso,
+   150→                'talla'                       => $talla,
+   151→                'presion_arterial'            => ($_POST['pa_sis'] ?? '') . '/' . ($_POST['pa_dia'] ?? ''),
+   152→                'temperatura'                 => $temperatura,
+   153→                'fc'                          => $fc,
+   154→                'fr'                          => $fr,
+   155→                'sat_o2'                      => $sat_o2,
+   156→                'tiempo_enfermedad'           => $_POST['tiempo_enfermedad']  ?? null,
+   157→                'motivo_consulta'             => $_POST['motivo_consulta']    ?? null,
+   158→                'enfermedad_actual'           => $_POST['enfermedad_actual']  ?? null,
+   159→                'antecedentes'                => $_POST['antecedentes']       ?? null,
+   160→                'examen_fisico'               => $_POST['examen_fisico']      ?? null,
+   161→                'examenes_auxiliares'         => $_POST['examenes_auxiliares']?? null,
+   162→                'diagnostico'                 => $_POST['diagnostico']        ?? null,
+   163→                'prescripcion'                => $_POST['prescripcion']       ?? null,
+   164→                'tratamiento'                 => $_POST['tratamiento']        ?? null,
+   165→                'dias_reposo'                 => $dias,
+   166→                'fecha_fin_reposo'            => $fecha_fin,
+   167→                'fecha_control'               => $fecha_control,
+   168→                'id_interconsulta_especialidad' => $interconsulta,
+   169→            ];
+   170→            
+   171→            $accion = $_POST['accion'] ?? 'finalizar';
+   172→
+   173→            if ($accion === 'guardar') {
+   174→                if ($citaModel->guardarProgresoAtencion($_POST['id_cita'], $datos)) {
+   175→                    header('Location: ' . BASE_URL . '/citas/atender?id=' . $_POST['id_cita'] . '&msg=guardado');
+   176→                } else {
+   177→                    header('Location: ' . BASE_URL . '/citas/atender?id=' . $_POST['id_cita'] . '&msg=error');
+   178→                }
+   179→            } else {
+   180→                if ($citaModel->finalizarAtencion($_POST['id_cita'], $datos)) {
+   181→                    // Si hay interconsulta, registrarla
+   182→                    if ($interconsulta) {
+   183→                        $db->prepare("INSERT INTO interconsultas (id_cita, id_especialidad, observaciones) VALUES (?,?,?)") 
+   184→                           ->execute([$_POST['id_cita'], $interconsulta, 'Generada desde atención']);
+   185→                    }
+   186→                    header('Location: ' . BASE_URL . '/citas?msg=atendido');
+   187→                } else {
+   188→                    header('Location: ' . BASE_URL . '/citas?msg=error');
+   189→                }
+   190→            }
+   191→        }
+   192→    }
+   193→
+   194→    public function eliminar() {
+   195→        if (isset($_GET['id'])) {
+   196→            $database = new Database(); $db = $database->connect(); $citaModel = new Cita($db);
+   197→            if ($citaModel->eliminar($_GET['id'])) header('Location: ' . BASE_URL . '/citas?msg=eliminado');
+   198→            else header('Location: ' . BASE_URL . '/citas?msg=error');
+   199→        }
+   200→    }
+   201→
+   202→    public function listarEventos() {}
+   203→    public function cobrar() { if(isset($_GET['id'])) header('Location: ' . BASE_URL . '/caja?cita_id=' . $_GET['id']); }
+   204→
+   205→    // AJAX: Obtener detalle completo de una cita para pre-cargar el modal de atención
+   206→    public function detalleCita() {
+   207→        if (isset($_GET['id'])) {
+   208→            $database = new Database(); $db = $database->connect(); $citaModel = new Cita($db);
+   209→            $detalle = $citaModel->obtenerDetalleCita($_GET['id']);
+   210→            
+   211→            // Obtener archivos del paciente
+   212→            if ($detalle && isset($detalle['id_paciente'])) {
+   213→                $stmtArchivos = $db->prepare("SELECT * FROM archivos_paciente WHERE id_paciente = :id ORDER BY fecha_subida DESC");
+   214→                $stmtArchivos->bindParam(':id', $detalle['id_paciente']);
+   215→                $stmtArchivos->execute();
+   216→                $detalle['archivos'] = $stmtArchivos->fetchAll(PDO::FETCH_ASSOC);
+   217→            }
+   218→
+   219→            header('Content-Type: application/json');
+   220→            echo json_encode($detalle ?: []);
+   221→            exit;
+   222→        }
+   223→    }
+   224→}
+   225→================ MedicoController.php ================
+   226→<?php
+   227→require_once APP_ROOT . '/config/Database.php';
+   228→require_once APP_ROOT . '/models/Medico.php';
+   229→require_once APP_ROOT . '/models/Especialidad.php';
+   230→
+   231→class MedicoController {
+   232→    
+   233→    public function index() {
+   234→        if (session_status() === PHP_SESSION_NONE) session_start();
+   235→        if (!isset($_SESSION['user_role_id']) || !in_array($_SESSION['user_role_id'], [1, 4])) { header('Location: ' . BASE_URL . '/home'); exit; }
+   236→
+   237→        $database = new Database();
+   238→        $db = $database->connect();
+   239→        
+   240→        $medicoModel = new Medico($db);
+   241→        $especialidadModel = new Especialidad($db);
+   242→        
+   243→        $medicos = $medicoModel->leer();
+   244→        $especialidades = $especialidadModel->leer();
+   245→        
+   246→        require_once APP_ROOT . '/views/admin/medicos.php';
+   247→    }
+   248→
+   249→    public function guardar() {
+   250→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   251→            $database = new Database(); $db = $database->connect(); $medicoModel = new Medico($db);
+   252→            $datos = ['nombre' => $_POST['nombre'], 'email' => $_POST['email'], 'password' => $_POST['password'], 'id_especialidad' => $_POST['id_especialidad'], 'colegiatura' => $_POST['colegiatura']];
+   253→            if($medicoModel->crear($datos)) header('Location: ' . BASE_URL . '/medicos?msg=creado'); else header('Location: ' . BASE_URL . '/medicos?msg=error');
+   254→        }
+   255→    }
+   256→
+   257→    public function actualizar() {
+   258→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   259→            $database = new Database(); $db = $database->connect(); $medicoModel = new Medico($db);
+   260→            $datos = ['id_medico' => $_POST['id_medico'], 'id_usuario' => $_POST['id_usuario'], 'nombre' => $_POST['nombre'], 'email' => $_POST['email'], 'password' => $_POST['password'], 'id_especialidad' => $_POST['id_especialidad'], 'colegiatura' => $_POST['colegiatura']];
+   261→            if($medicoModel->actualizar($datos)) header('Location: ' . BASE_URL . '/medicos?msg=actualizado'); else header('Location: ' . BASE_URL . '/medicos?msg=error');
+   262→        }
+   263→    }
+   264→
+   265→    public function cambiarEstado() {
+   266→        if (isset($_GET['id']) && isset($_GET['estado'])) {
+   267→            $database = new Database(); $db = $database->connect(); $medicoModel = new Medico($db);
+   268→            $id = $_GET['id']; $estado = intval($_GET['estado']); $nuevo = ($estado == 1) ? 0 : 1;
+   269→            if ($medicoModel->cambiarEstado($id, $nuevo)) { $msg = ($nuevo == 1) ? 'activado' : 'desactivado'; header('Location: ' . BASE_URL . '/medicos?msg=' . $msg); } else header('Location: ' . BASE_URL . '/medicos?msg=error');
+   270→        } else header('Location: ' . BASE_URL . '/medicos');
+   271→    }
+   272→
+   273→    // --- HORARIOS ---
+   274→    public function horarios() {
+   275→        if (!isset($_GET['id'])) { header('Location: ' . BASE_URL . '/medicos'); exit; }
+   276→        
+   277→        $database = new Database(); $db = $database->connect();
+   278→        $medicoModel = new Medico($db);
+   279→        
+   280→        $id_medico = $_GET['id'];
+   281→        
+   282→        $horarios            = $medicoModel->obtenerHorariosRecurrentes($id_medico);
+   283→        $horariosEspecificos = $medicoModel->obtenerHorariosEspecificos($id_medico);
+   284→        $medico              = $medicoModel->obtenerPorId($id_medico);
+   285→
+   286→        if (!$medico) { header('Location: ' . BASE_URL . '/medicos'); exit; }
+   287→
+   288→        require_once APP_ROOT . '/views/admin/horarios_medico.php';
+   289→    }
+   290→
+   291→    public function guardarHorario() {
+   292→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   293→            $database = new Database(); $db = $database->connect(); $medicoModel = new Medico($db);
+   294→            $fecha = !empty($_POST['fecha_especifica']) ? $_POST['fecha_especifica'] : null;
+   295→            $medicoModel->agregarHorario($_POST['id_medico'], $_POST['dia'], $_POST['inicio'], $_POST['fin'], $fecha);
+   296→            header('Location: ' . BASE_URL . '/medicos/horarios?id=' . $_POST['id_medico']);
+   297→        }
+   298→    }
+   299→
+   300→    public function eliminarHorario() {
+   301→        if (isset($_GET['id']) && isset($_GET['id_medico'])) {
+   302→            $database = new Database(); $db = $database->connect(); $medicoModel = new Medico($db);
+   303→            $medicoModel->eliminarHorario($_GET['id']);
+   304→            header('Location: ' . BASE_URL . '/medicos/horarios?id=' . $_GET['id_medico']);
+   305→        }
+   306→    }
+   307→}
+   308→================ PacienteController.php ================
+   309→<?php
+   310→require_once APP_ROOT . '/config/Database.php';
+   311→require_once APP_ROOT . '/models/Paciente.php';
+   312→require_once APP_ROOT . '/models/Cita.php'; 
+   313→
+   314→class PacienteController {
+   315→    
+   316→    public function index() {
+   317→        if (session_status() === PHP_SESSION_NONE) session_start();
+   318→        if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 4) { header('Location: ' . BASE_URL . '/home'); exit; }
+   319→        $database = new Database();
+   320→        $db = $database->connect();
+   321→        $pacienteModel = new Paciente($db);
+   322→        
+   323→        $pacientes = $pacienteModel->leer();
+   324→        
+   325→        require_once APP_ROOT . '/views/admin/pacientes.php';
+   326→    }
+   327→
+   328→    public function guardar() {
+   329→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   330→            $database = new Database(); 
+   331→            $db = $database->connect(); 
+   332→            $pacienteModel = new Paciente($db);
+   333→            
+   334→            $datos = [
+   335→                'nombre' => $_POST['nombre'],
+   336→                'email' => $_POST['email'],
+   337→                'telefono' => $_POST['telefono'],
+   338→                'documento_identidad' => $_POST['documento_identidad'],
+   339→                'grupo_sanguineo' => $_POST['grupo_sanguineo'],
+   340→                'alergias' => $_POST['alergias'],
+   341→                'enfermedades_cronicas' => $_POST['enfermedades_cronicas'],
+   342→                'fecha_nacimiento' => $_POST['fecha_nacimiento'] ?? null,
+   343→                'sexo' => $_POST['sexo'] ?? 'No especificado',
+   344→                'persona_responsable' => $_POST['persona_responsable'] ?? null,
+   345→                'tel_responsable' => $_POST['tel_responsable'] ?? null,
+   346→                'nro_historia_clinica' => $_POST['nro_historia_clinica'] ?? null
+   347→            ];
+   348→
+   349→            if ($pacienteModel->crear($datos)) {
+   350→                header('Location: ' . BASE_URL . '/pacientes?msg=creado');
+   351→            } else {
+   352→                header('Location: ' . BASE_URL . '/pacientes?msg=error');
+   353→            }
+   354→        }
+   355→    }
+   356→
+   357→    public function actualizar() {
+   358→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   359→            $database = new Database(); 
+   360→            $db = $database->connect(); 
+   361→            $pacienteModel = new Paciente($db);
+   362→            
+   363→            $datos = [
+   364→                'id_usuario' => $_POST['id_usuario'], 
+   365→                'nombre' => $_POST['nombre'],
+   366→                'email' => $_POST['email'],
+   367→                'telefono' => $_POST['telefono'],
+   368→                'documento_identidad' => $_POST['documento_identidad'],
+   369→                'grupo_sanguineo' => $_POST['grupo_sanguineo'],
+   370→                'alergias' => $_POST['alergias'],
+   371→                'enfermedades_cronicas' => $_POST['enfermedades_cronicas'],
+   372→                'fecha_nacimiento' => $_POST['fecha_nacimiento'] ?? null,
+   373→                'sexo' => $_POST['sexo'] ?? 'No especificado',
+   374→                'persona_responsable' => $_POST['persona_responsable'] ?? null,
+   375→                'tel_responsable' => $_POST['tel_responsable'] ?? null,
+   376→                'nro_historia_clinica' => $_POST['nro_historia_clinica'] ?? null
+   377→            ];
+   378→
+   379→            if ($pacienteModel->actualizar($datos)) {
+   380→                header('Location: ' . BASE_URL . '/pacientes?msg=actualizado');
+   381→            } else {
+   382→                header('Location: ' . BASE_URL . '/pacientes?msg=error');
+   383→            }
+   384→        }
+   385→    }
+   386→
+   387→    public function cambiarEstado() {
+   388→        if (isset($_GET['id']) && isset($_GET['estado'])) {
+   389→            $database = new Database(); $db = $database->connect(); $pacienteModel = new Paciente($db);
+   390→            $nuevoEstado = ($_GET['estado'] == 1) ? 0 : 1;
+   391→            $pacienteModel->cambiarEstado($_GET['id'], $nuevoEstado);
+   392→            header('Location: ' . BASE_URL . '/pacientes?msg=actualizado');
+   393→        }
+   394→    }
+   395→
+   396→    public function historial() {
+   397→        if (!isset($_GET['id'])) { header('Location: ' . BASE_URL . '/pacientes'); exit; }
+   398→        
+   399→        $database = new Database(); 
+   400→        $db = $database->connect();
+   401→        $pacienteModel = new Paciente($db); 
+   402→        $citaModel = new Cita($db);
+   403→        
+   404→        $paciente = $pacienteModel->obtenerPorId($_GET['id']);
+   405→        if(!$paciente) { header('Location: ' . BASE_URL . '/pacientes'); exit; }
+   406→
+   407→        // Historial de citas
+   408→        $historial = $citaModel->leer(null, null, null, null, $_GET['id']);
+   409→        
+   410→        // Archivos adjuntos
+   411→        $stmtArchivos = $db->prepare("SELECT * FROM archivos_paciente WHERE id_paciente = :id ORDER BY fecha_subida DESC");
+   412→        $stmtArchivos->bindParam(':id', $_GET['id']);
+   413→        $stmtArchivos->execute();
+   414→        $archivos = $stmtArchivos->fetchAll(PDO::FETCH_ASSOC);
+   415→
+   416→        // Apunta a tu archivo existente
+   417→        require_once APP_ROOT . '/views/admin/historial_clinico.php';
+   418→    }
+   419→
+   420→    public function subirArchivo() {
+   421→        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['archivo'])) {
+   422→            $id_paciente = $_POST['id_paciente'];
+   423→            $nombre_archivo = $_FILES['archivo']['name'];
+   424→            $ruta_temp = $_FILES['archivo']['tmp_name'];
+   425→            
+   426→            $directorio = dirname(__DIR__, 2) . '/public/uploads/';
+   427→            if (!file_exists($directorio)) { mkdir($directorio, 0777, true); }
+   428→            
+   429→            $nombre_final = time() . '_' . $nombre_archivo;
+   430→            $ruta_destino = $directorio . $nombre_final;
+   431→            
+   432→            if (move_uploaded_file($ruta_temp, $ruta_destino)) {
+   433→                $database = new Database(); $db = $database->connect();
+   434→                $stmt = $db->prepare("INSERT INTO archivos_paciente (id_paciente, nombre_archivo, ruta_archivo, tipo_archivo) VALUES (:id, :nom, :ruta, :tipo)");
+   435→                $tipo = pathinfo($nombre_archivo, PATHINFO_EXTENSION);
+   436→                $ruta_relativa = '/uploads/' . $nombre_final;
+   437→                
+   438→                $stmt->bindParam(':id', $id_paciente); 
+   439→                $stmt->bindParam(':nom', $nombre_archivo); 
+   440→                $stmt->bindParam(':ruta', $ruta_relativa); 
+   441→                $stmt->bindParam(':tipo', $tipo);
+   442→                $stmt->execute();
+   443→            }
+   444→            header('Location: ' . BASE_URL . '/pacientes/historial?id=' . $id_paciente);
+   445→        }
+   446→    }
+   447→}
+   448→================ PagoController.php ================
+   449→<?php
+   450→require_once APP_ROOT . '/config/Database.php';
+   451→require_once APP_ROOT . '/models/Pago.php';
+   452→require_once APP_ROOT . '/models/Configuracion.php';
+   453→
+   454→class PagoController {
+   455→    
+   456→    public function index() {
+   457→        // Seguridad: Admin (1) y Recepción (4)
+   458→        if (!isset($_SESSION['user_role_id']) || ($_SESSION['user_role_id'] != 1 && $_SESSION['user_role_id'] != 4)) {
+   459→            header('Location: ' . BASE_URL . '/home');
+   460→            exit;
+   461→        }
+   462→
+   463→        $database = new Database();
+   464→        $db = $database->connect();
+   465→        
+   466→        $pagoModel = new Pago($db);
+   467→        $configModel = new Configuracion($db);
+   468→        $empresa = $configModel->obtener();
+   469→
+   470→        $fechaInicio = isset($_GET['inicio']) ? $_GET['inicio'] : date('Y-m-01');
+   471→        $fechaFin = isset($_GET['fin']) ? $_GET['fin'] : date('Y-m-d');
+   472→
+   473→        $resultado = $pagoModel->listar($fechaInicio, $fechaFin);
+   474→        
+   475→        require_once APP_ROOT . '/views/admin/pagos.php';
+   476→    }
+   477→
+   478→    public function eliminar() {
+   479→        // SEGURIDAD CRÍTICA: SOLO ADMIN (Rol 1) PUEDE ELIMINAR PAGOS
+   480→        // La Recepcionista (Rol 4) NO puede entrar aquí.
+   481→        if (!isset($_SESSION['user_role_id']) || $_SESSION['user_role_id'] != 1) {
+   482→            // Si intenta borrar, lo mandamos fuera
+   483→            header('Location: ' . BASE_URL . '/pagos?msg=error_permisos'); 
+   484→            exit;
+   485→        }
+   486→
+   487→        if (isset($_GET['id'])) {
+   488→            $database = new Database();
+   489→            $db = $database->connect();
+   490→            $pagoModel = new Pago($db);
+   491→            
+   492→            if ($pagoModel->eliminar($_GET['id'])) {
+   493→                header('Location: ' . BASE_URL . '/pagos?msg=eliminado');
+   494→            } else {
+   495→                header('Location: ' . BASE_URL . '/pagos?msg=error');
+   496→            }
+   497→        }
+   498→    }
+   499→}
+   500→================ CajaController.php ================
+   501→<?php
+   502→require_once APP_ROOT . '/config/Database.php';
+   503→require_once APP_ROOT . '/models/Caja.php';
+   504→require_once APP_ROOT . '/models/Cita.php'; // Necesario para leer datos de la cita
+   505→
+   506→class CajaController {
+   507→    
+   508→    public function index() {
+   509→        if (session_status() === PHP_SESSION_NONE) session_start();
+   510→        if (!isset($_SESSION['user_role_id']) || !in_array($_SESSION['user_role_id'], [1, 4])) { header('Location: ' . BASE_URL . '/home'); exit; }
+   511→        $userId = $_SESSION['user_id'];
+   512→
+   513→        $database = new Database();
+   514→        $db = $database->connect();
+   515→        $cajaModel = new Caja($db);
+   516→        $citaModel = new Cita($db);
+   517→        
+   518→        $sesionActiva = $cajaModel->obtenerSesionActiva($userId);
+   519→
+   520→        if (!$sesionActiva) {
+   521→            require_once APP_ROOT . '/views/admin/caja_apertura.php';
+   522→        } else {
+   523→            // Datos del Dashboard
+   524→            $balance = $cajaModel->obtenerBalance($sesionActiva['id_sesion'], $sesionActiva['fecha_apertura']);
+   525→            $gastos = $cajaModel->listarGastos($sesionActiva['id_sesion']);
+   526→            $ingresosRecientes = $cajaModel->listarIngresosRecientes();
+   527→            
+   528→            $saldoInicial = $sesionActiva['monto_apertura'];
+   529→            $totalIngresos = $balance['ingresos'];
+   530→            $totalGastos = $balance['gastos'];
+   531→            $saldoActual = ($saldoInicial + $totalIngresos) - $totalGastos;
+   532→
+   533→            // --- LÓGICA DE COBRO AUTOMÁTICO ---
+   534→            $datosCobro = null;
+   535→            if (isset($_GET['cita_id'])) {
+   536→                // Buscamos los datos para llenar el modal automáticamente
+   537→                $datosCobro = $citaModel->obtenerParaCobro($_GET['cita_id']);
+   538→            }
+   539→
+   540→            require_once APP_ROOT . '/views/admin/caja_dashboard.php';
+   541→        }
+   542→    }
+   543→
+   544→    public function guardarCobro() {
+   545→        if (session_status() === PHP_SESSION_NONE) session_start();
+   546→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   547→            $database = new Database();
+   548→            $db = $database->connect();
+   549→            $cajaModel = new Caja($db);
+   550→
+   551→            $id_cita = $_POST['id_cita'];
+   552→            $monto = $_POST['monto'];
+   553→            $metodo = $_POST['metodo_pago'];
+   554→            $obs = $_POST['observaciones'];
+   555→
+   556→            if ($cajaModel->registrarCobro($id_cita, $monto, $metodo, $obs)) {
+   557→                // Redirigir a caja limpio (sin ID) y con mensaje de éxito
+   558→                header('Location: ' . BASE_URL . '/caja?msg=cobro_ok');
+   559→            } else {
+   560→                header('Location: ' . BASE_URL . '/caja?msg=error');
+   561→            }
+   562→        }
+   563→    }
+   564→
+   565→    public function abrir() {
+   566→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   567→            $database = new Database(); $db = $database->connect(); $cajaModel = new Caja($db);
+   568→            session_start();
+   569→            if ($cajaModel->abrirCaja($_SESSION['user_id'], $_POST['monto_apertura'])) {
+   570→                header('Location: ' . BASE_URL . '/caja?msg=apertura_ok');
+   571→            } else {
+   572→                header('Location: ' . BASE_URL . '/caja?msg=error');
+   573→            }
+   574→        }
+   575→    }
+   576→
+   577→    public function registrarGasto() {
+   578→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   579→            $database = new Database(); $db = $database->connect(); $cajaModel = new Caja($db);
+   580→            if ($cajaModel->registrarGasto($_POST['id_sesion'], $_POST['descripcion'], $_POST['monto'])) {
+   581→                header('Location: ' . BASE_URL . '/caja?msg=gasto_ok');
+   582→            } else {
+   583→                header('Location: ' . BASE_URL . '/caja?msg=error');
+   584→            }
+   585→        }
+   586→    }
+   587→
+   588→    public function cerrar() {
+   589→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   590→            $database = new Database(); $db = $database->connect(); $cajaModel = new Caja($db);
+   591→            if ($cajaModel->cerrarCaja($_POST['id_sesion'], $_POST['monto_cierre'], $_POST['observaciones'])) {
+   592→                header('Location: ' . BASE_URL . '/caja?msg=cierre_ok');
+   593→            } else {
+   594→                header('Location: ' . BASE_URL . '/caja?msg=error');
+   595→            }
+   596→        }
+   597→    }
+   598→}
+   599→================ ServicioController.php ================
+   600→<?php
+   601→require_once APP_ROOT . '/config/Database.php';
+   602→require_once APP_ROOT . '/models/Servicio.php';
+   603→// Necesitamos configuración para saber la moneda
+   604→require_once APP_ROOT . '/models/Configuracion.php';
+   605→
+   606→class ServicioController {
+   607→    
+   608→    public function index() {
+   609→        // SEGURIDAD: Solo Admin puede ver esto
+   610→        if (!isset($_SESSION['user_role_id']) || !in_array($_SESSION['user_role_id'], [1, 4])) {
+   611→            header('Location: ' . BASE_URL . '/home');
+   612→            exit;
+   613→        }
+   614→
+   615→        $database = new Database();
+   616→        $db = $database->connect();
+   617→        
+   618→        $servicioModel = new Servicio($db);
+   619→        $configModel = new Configuracion($db);
+   620→        
+   621→        $resultado = $servicioModel->leer();
+   622→        $empresa = $configModel->obtener(); // Para el símbolo de moneda
+   623→        
+   624→        require_once APP_ROOT . '/views/admin/servicios.php';
+   625→    }
+   626→
+   627→    public function guardar() {
+   628→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   629→            $database = new Database();
+   630→            $db = $database->connect();
+   631→            $servicioModel = new Servicio($db);
+   632→
+   633→            $datos = [
+   634→                'nombre' => $_POST['nombre'],
+   635→                'descripcion' => $_POST['descripcion'],
+   636→                'precio' => $_POST['precio']
+   637→            ];
+   638→
+   639→            if($servicioModel->crear($datos)) {
+   640→                header('Location: ' . BASE_URL . '/servicios?msg=creado');
+   641→            } else {
+   642→                header('Location: ' . BASE_URL . '/servicios?msg=error');
+   643→            }
+   644→        }
+   645→    }
+   646→
+   647→    public function actualizar() {
+   648→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   649→            $database = new Database();
+   650→            $db = $database->connect();
+   651→            $servicioModel = new Servicio($db);
+   652→
+   653→            $datos = [
+   654→                'id' => $_POST['id_servicio'],
+   655→                'nombre' => $_POST['nombre'],
+   656→                'descripcion' => $_POST['descripcion'],
+   657→                'precio' => $_POST['precio'],
+   658→                'estado' => $_POST['estado']
+   659→            ];
+   660→
+   661→            if($servicioModel->actualizar($datos)) {
+   662→                header('Location: ' . BASE_URL . '/servicios?msg=actualizado');
+   663→            } else {
+   664→                header('Location: ' . BASE_URL . '/servicios?msg=error');
+   665→            }
+   666→        }
+   667→    }
+   668→
+   669→    public function eliminar() {
+   670→        if (isset($_GET['id'])) {
+   671→            $database = new Database();
+   672→            $db = $database->connect();
+   673→            $servicioModel = new Servicio($db);
+   674→            
+   675→            if ($servicioModel->eliminar($_GET['id'])) {
+   676→                header('Location: ' . BASE_URL . '/servicios?msg=eliminado');
+   677→            } else {
+   678→                header('Location: ' . BASE_URL . '/servicios?msg=error');
+   679→            }
+   680→        }
+   681→    }
+   682→}
+   683→================ EspecialidadController.php ================
+   684→<?php
+   685→require_once APP_ROOT . '/config/Database.php';
+   686→require_once APP_ROOT . '/models/Especialidad.php';
+   687→
+   688→class EspecialidadController {
+   689→    
+   690→    public function index() {
+   691→        if (session_status() === PHP_SESSION_NONE) session_start();
+   692→        // Solo Admin (Rol 1)
+   693→        if (!isset($_SESSION['user_role_id']) || !in_array($_SESSION['user_role_id'], [1, 4])) {
+   694→            header('Location: ' . BASE_URL . '/home'); 
+   695→            exit; 
+   696→        }
+   697→
+   698→        $database = new Database();
+   699→        $db = $database->connect();
+   700→        $especialidadModel = new Especialidad($db);
+   701→        
+   702→        $resultado = $especialidadModel->leer();
+   703→        
+   704→        require_once APP_ROOT . '/views/admin/especialidades.php';
+   705→    }
+   706→
+   707→    public function guardar() {
+   708→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   709→            $database = new Database(); 
+   710→            $db = $database->connect(); 
+   711→            $especialidadModel = new Especialidad($db);
+   712→
+   713→            if($especialidadModel->crear($_POST['nombre'])) {
+   714→                header('Location: ' . BASE_URL . '/especialidades?msg=creado');
+   715→            } else {
+   716→                header('Location: ' . BASE_URL . '/especialidades?msg=error');
+   717→            }
+   718→        }
+   719→    }
+   720→
+   721→    public function actualizar() {
+   722→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   723→            $database = new Database(); 
+   724→            $db = $database->connect(); 
+   725→            $especialidadModel = new Especialidad($db);
+   726→
+   727→            if($especialidadModel->actualizar($_POST['id_especialidad'], $_POST['nombre'])) {
+   728→                header('Location: ' . BASE_URL . '/especialidades?msg=actualizado');
+   729→            } else {
+   730→                header('Location: ' . BASE_URL . '/especialidades?msg=error');
+   731→            }
+   732→        }
+   733→    }
+   734→
+   735→    // --- FUNCIÓN ACTIVAR / DESACTIVAR ---
+   736→    public function cambiarEstado() {
+   737→        if (isset($_GET['id']) && isset($_GET['estado'])) {
+   738→            $database = new Database(); 
+   739→            $db = $database->connect(); 
+   740→            $especialidadModel = new Especialidad($db);
+   741→            
+   742→            $id = $_GET['id'];
+   743→            $estadoActual = intval($_GET['estado']);
+   744→            $nuevoEstado = ($estadoActual == 1) ? 0 : 1;
+   745→            
+   746→            if ($especialidadModel->cambiarEstado($id, $nuevoEstado)) {
+   747→                $msg = ($nuevoEstado == 1) ? 'activado' : 'desactivado';
+   748→                header('Location: ' . BASE_URL . '/especialidades?msg=' . $msg);
+   749→            } else {
+   750→                header('Location: ' . BASE_URL . '/especialidades?msg=error');
+   751→            }
+   752→        } else {
+   753→            header('Location: ' . BASE_URL . '/especialidades');
+   754→        }
+   755→    }
+   756→    // --- AJAX: Profesionales por especialidad ---
+   757→    public function profesionales() {
+   758→        if (session_status() === PHP_SESSION_NONE) session_start();
+   759→        if (!isset($_GET['id'])) { echo json_encode([]); exit; }
+   760→
+   761→        $database = new Database();
+   762→        $db = $database->connect();
+   763→
+   764→        $id = intval($_GET['id']);
+   765→        $query = "SELECT u.nombre, e.nombre AS especialidad, u.email, u.estado
+   766→                  FROM medicos m
+   767→                  JOIN usuarios u ON m.id_usuario = u.id_usuario
+   768→                  JOIN especialidades e ON m.id_especialidad = e.id_especialidad
+   769→                  WHERE m.id_especialidad = :id
+   770→                  ORDER BY u.nombre ASC";
+   771→        $stmt = $db->prepare($query);
+   772→        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+   773→        $stmt->execute();
+   774→        $lista = $stmt->fetchAll(PDO::FETCH_ASSOC);
+   775→
+   776→        header('Content-Type: application/json');
+   777→        echo json_encode($lista);
+   778→        exit;
+   779→    }
+   780→}
+   781→================ MedicamentoController.php ================
+   782→<?php
+   783→require_once APP_ROOT . '/config/Database.php';
+   784→require_once APP_ROOT . '/models/Medicamento.php';
+   785→
+   786→class MedicamentoController {
+   787→    
+   788→    public function index() {
+   789→        if (session_status() === PHP_SESSION_NONE) session_start();
+   790→        
+   791→        // SEGURIDAD: Permitir Admin (1) y Recepción (4)
+   792→        // Agregamos $_SESSION['user_role_id'] == 4 para que la recepcionista pueda ver el stock
+   793→        if (!isset($_SESSION['user_role_id']) || ($_SESSION['user_role_id'] != 1 && $_SESSION['user_role_id'] != 4)) {
+   794→            header('Location: ' . BASE_URL . '/home');
+   795→            exit;
+   796→        }
+   797→
+   798→        $database = new Database();
+   799→        $db = $database->connect();
+   800→        $medModel = new Medicamento($db);
+   801→        
+   802→        $resultado = $medModel->leer();
+   803→        
+   804→        require_once APP_ROOT . '/views/admin/medicamentos.php';
+   805→    }
+   806→
+   807→    public function guardar() {
+   808→        // SEGURIDAD: Solo Admin puede crear
+   809→        if (session_status() === PHP_SESSION_NONE) session_start();
+   810→        if ($_SESSION['user_role_id'] != 1) { header('Location: ' . BASE_URL . '/medicamentos'); exit; }
+   811→
+   812→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   813→            $database = new Database();
+   814→            $db = $database->connect();
+   815→            $medModel = new Medicamento($db);
+   816→
+   817→            $datos = [
+   818→                'nombre_comercial' => $_POST['nombre_comercial'],
+   819→                'nombre_generico' => $_POST['nombre_generico'],
+   820→                'presentacion' => $_POST['presentacion'],
+   821→                'stock' => $_POST['stock']
+   822→            ];
+   823→
+   824→            if($medModel->crear($datos)) {
+   825→                header('Location: ' . BASE_URL . '/medicamentos?msg=creado');
+   826→            } else {
+   827→                header('Location: ' . BASE_URL . '/medicamentos?msg=error');
+   828→            }
+   829→        }
+   830→    }
+   831→
+   832→    public function actualizar() {
+   833→        // SEGURIDAD: Solo Admin puede editar
+   834→        if (session_status() === PHP_SESSION_NONE) session_start();
+   835→        if ($_SESSION['user_role_id'] != 1) { header('Location: ' . BASE_URL . '/medicamentos'); exit; }
+   836→
+   837→        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   838→            $database = new Database();
+   839→            $db = $database->connect();
+   840→            $medModel = new Medicamento($db);
+   841→
+   842→            $datos = [
+   843→                'id' => $_POST['id_medicamento'],
+   844→                'nombre_comercial' => $_POST['nombre_comercial'],
+   845→                'nombre_generico' => $_POST['nombre_generico'],
+   846→                'presentacion' => $_POST['presentacion'],
+   847→                'stock' => $_POST['stock'],
+   848→                'estado' => $_POST['estado']
+   849→            ];
+   850→
+   851→            if($medModel->actualizar($datos)) {
+   852→                header('Location: ' . BASE_URL . '/medicamentos?msg=actualizado');
+   853→            } else {
+   854→                header('Location: ' . BASE_URL . '/medicamentos?msg=error');
+   855→            }
+   856→        }
+   857→    }
+   858→
+   859→    public function eliminar() {
+   860→        // SEGURIDAD: Solo Admin puede borrar
+   861→        if (session_status() === PHP_SESSION_NONE) session_start();
+   862→        if ($_SESSION['user_role_id'] != 1) { header('Location: ' . BASE_URL . '/medicamentos'); exit; }
+   863→
+   864→        if (isset($_GET['id'])) {
+   865→            $database = new Database();
+   866→            $db = $database->connect();
+   867→            $medModel = new Medicamento($db);
+   868→            
+   869→            if ($medModel->eliminar($_GET['id'])) {
+   870→                header('Location: ' . BASE_URL . '/medicamentos?msg=eliminado');
+   871→            } else {
+   872→                header('Location: ' . BASE_URL . '/medicamentos?msg=error');
+   873→            }
+   874→        }
+   875→    }
+   876→}
+   877→================ ReporteController.php ================
+   878→<?php
+   879→require_once APP_ROOT . '/config/Database.php';
+   880→require_once APP_ROOT . '/models/Reporte.php';
+   881→require_once APP_ROOT . '/models/Configuracion.php';
+   882→
+   883→class ReporteController {
+   884→    
+   885→    public function index() {
+   886→        // SEGURIDAD: Solo Admin
+   887→        if (!isset($_SESSION['user_role_id']) || $_SESSION['user_role_id'] != 1) {
+   888→            header('Location: ' . BASE_URL . '/home');
+   889→            exit;
+   890→        }
+   891→
+   892→        $database = new Database();
+   893→        $db = $database->connect();
+   894→        
+   895→        $reporteModel = new Reporte($db);
+   896→        $configModel = new Configuracion($db);
+   897→        $empresa = $configModel->obtener();
+   898→
+   899→        // Fechas por defecto: Del 1ro del mes hasta hoy
+   900→        $fechaInicio = isset($_GET['inicio']) ? $_GET['inicio'] : date('Y-m-01');
+   901→        $fechaFin = isset($_GET['fin']) ? $_GET['fin'] : date('Y-m-d');
+   902→
+   903→        // Obtener métricas
+   904→        $ingresos = $reporteModel->totalIngresos($fechaInicio, $fechaFin);
+   905→        $ingresosDia = $reporteModel->totalIngresos(date('Y-m-d'), date('Y-m-d'));
+   906→        $ingresosMes = $reporteModel->totalIngresos(date('Y-m-01'), date('Y-m-t'));
+   907→        $estadosCitas = $reporteModel->citasPorEstado($fechaInicio, $fechaFin);
+   908→        $topServicios = $reporteModel->serviciosMasVendidos($fechaInicio, $fechaFin);
+   909→        $topMedicos = $reporteModel->rendimientoMedicos($fechaInicio, $fechaFin);
+   910→
+   911→        require_once APP_ROOT . '/views/admin/reportes.php';
+   912→    }
+   913→}

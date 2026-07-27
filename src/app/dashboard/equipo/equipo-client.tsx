@@ -1,0 +1,119 @@
+'use client';
+
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import type { Plan } from '@/lib/plans';
+import { UserCog, Lock, Crown } from 'lucide-react';
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  invitedAt: string;
+  acceptedAt: string | null;
+}
+
+interface Props {
+  user: { email: string; name: string };
+  plan: Plan;
+  clinicName: string;
+  isSuperAdmin?: boolean;
+  locked: boolean;
+  members: Member[];
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'Dueño',
+  admin: 'Administrador',
+  doctor: 'Médico',
+  receptionist: 'Recepcionista',
+};
+
+export function EquipoClient(props: Props) {
+  const { user, plan, clinicName, isSuperAdmin, locked, members } = props;
+
+  if (locked) {
+    return (
+      <DashboardShell user={user} plan={plan} clinicName={clinicName} isSuperAdmin={isSuperAdmin}>
+        <div className="p-6 lg:p-8 flex items-center justify-center min-h-[60vh]">
+          <div className="max-w-md text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8 text-amber-400" />
+            </div>
+            <h2 className="text-2xl font-bold">Gestión de equipo es una función Premium</h2>
+            <p className="text-white/60">
+              Invita médicos, recepcionistas y administradores con roles diferenciados.
+              Disponible desde el plan Premium (S/ 99/mes).
+            </p>
+            <Link href="/dashboard/billing">
+              <button className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb] text-white px-6 py-2 rounded-lg font-medium hover:opacity-90">
+                <Crown className="w-4 h-4 inline mr-2" />
+                Mejorar a Premium
+              </button>
+            </Link>
+          </div>
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  return (
+    <DashboardShell user={user} plan={plan} clinicName={clinicName} isSuperAdmin={isSuperAdmin}>
+      <div className="p-6 lg:p-8 space-y-6">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold">Equipo</h1>
+          <p className="text-white/60 text-sm mt-1">
+            {members.length} miembros en la clínica
+          </p>
+        </div>
+
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
+          {members.length === 0 ? (
+            <div className="py-16 text-center text-white/40">
+              <UserCog className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>Sin miembros registrados</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {members.map(m => (
+                <div key={m.id} className="p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#2563eb] flex items-center justify-center font-bold">
+                    {m.name.split(' ').slice(0, 2).map(w => w[0]).join('')}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{m.name}</div>
+                    <div className="text-xs text-white/40">{m.email}</div>
+                  </div>
+                  <Badge variant="outline" className="border-white/20 text-white/60">
+                    {ROLE_LABELS[m.role] || m.role}
+                  </Badge>
+                  {m.acceptedAt ? (
+                    <span className="text-xs text-white/40">
+                      Desde {format(new Date(m.acceptedAt), 'dd/MM/yy', { locale: es })}
+                    </span>
+                  ) : (
+                    <Badge variant="outline" className="border-yellow-500/30 text-yellow-300">
+                      Pendiente
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+          <h3 className="font-bold mb-2">Invitar miembro</h3>
+          <p className="text-sm text-white/40">
+            Próximamente: invitar por email a tu equipo con roles personalizados.
+            Por ahora, los miembros se agregan vía API o base de datos.
+          </p>
+        </div>
+      </div>
+    </DashboardShell>
+  );
+}
