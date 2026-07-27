@@ -4,7 +4,7 @@
 const PROD_URL = 'https://citas-medicas-red.vercel.app';
 
 const timestamp = Date.now();
-const testEmail = `test+${timestamp}@citaspro.test`;
+const testEmail = `test+${timestamp}@gmail.com`;
 const testName = 'Clínica Test Producción';
 const testPassword = 'TestPassword123!';
 
