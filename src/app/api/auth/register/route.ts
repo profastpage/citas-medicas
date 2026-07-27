@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { hashPassword, signSession, setSessionCookie } from '@/lib/auth';
 
 const schema = z.object({
   fullName: z.string().min(2, 'Nombre muy corto'),
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     const { fullName, email, password, clinicName, phone } = parsed.data;
 
-    // Verificar email no registrado
+    // Verificar email no registrado en nuestro perfil
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) {
       return NextResponse.json(
@@ -33,44 +33,86 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Crear usuario + clínica en transacción
-    const passwordHash = await hashPassword(password);
-    const slug = clinicName
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 6);
+    const supabase = await createSupabaseServerClient();
 
-    const user = await db.user.create({
-      data: {
+    // Crear usuario en Supabase Auth (esto dispara el trigger que crea el perfil)
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          phone,
+        },
+      },
+    });
+
+    if (authError || !authData.user) {
+      // Mensaje amigable para email ya registrado en Supabase pero sin perfil
+      const msg = authError?.message ?? 'Error al crear la cuenta';
+      if (msg.toLowerCase().includes('already been registered') || msg.toLowerCase().includes('already registered')) {
+        return NextResponse.json(
+          { error: 'Ya existe una cuenta con este email' },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
+    const supabaseUid = authData.user.id;
+
+    // Fallback: si el trigger no creó el perfil (puede pasar en algunos setups),
+    // lo creamos manualmente.
+    const userProfile = await db.user.upsert({
+      where: { supabaseUid },
+      update: {
         email,
-        passwordHash,
         fullName,
         phone,
         role: 'owner',
         plan: 'free',
-        ownedClinics: {
-          create: {
-            name: clinicName,
-            slug,
-            phone,
-          },
-        },
       },
-      include: { ownedClinics: true },
+      create: {
+        supabaseUid,
+        email,
+        fullName,
+        phone,
+        role: 'owner',
+        plan: 'free',
+      },
     });
 
-    // Crear specialties de default
+    // Generar slug único para la clínica
+    const slug =
+      clinicName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') +
+      '-' +
+      Math.random().toString(36).slice(2, 6);
+
+    // Crear la clínica
+    const clinic = await db.clinic.create({
+      data: {
+        ownerId: userProfile.id,
+        name: clinicName,
+        slug,
+        phone,
+      },
+    });
+
+    // Especialidades por defecto
     const defaultSpecialties = ['Medicina General', 'Pediatría', 'Ginecología'];
     await db.specialty.createMany({
       data: defaultSpecialties.map(name => ({
-        clinicId: user.ownedClinics[0].id,
+        clinicId: clinic.id,
         name,
       })),
     });
 
-    // Servicios default
+    // Servicios por defecto
     const defaultServices = [
       { name: 'Consulta Médica General', price: 50, durationMin: 30 },
       { name: 'Consulta Pediátrica', price: 60, durationMin: 30 },
@@ -79,22 +121,19 @@ export async function POST(req: NextRequest) {
     await db.service.createMany({
       data: defaultServices.map(s => ({
         ...s,
-        clinicId: user.ownedClinics[0].id,
+        clinicId: clinic.id,
       })),
     });
 
-    // Sesión
-    const token = await signSession({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      plan: user.plan,
-    });
-    await setSessionCookie(token);
-
     return NextResponse.json({
       ok: true,
-      user: { id: user.id, email: user.email, fullName: user.fullName, plan: user.plan },
+      user: {
+        id: userProfile.id,
+        email: userProfile.email,
+        fullName: userProfile.fullName,
+        plan: userProfile.plan,
+      },
+      clinic: { id: clinic.id, name: clinic.name, slug: clinic.slug },
     });
   } catch (err) {
     console.error('[register]', err);

@@ -1,86 +1,35 @@
 // ============================================================
-// CitasPro SaaS — Auth con JWT (cookie httpOnly)
+// CitasPro SaaS — Auth helpers (Supabase Auth + Prisma)
+// ============================================================
+// La autenticación real la hace Supabase Auth (auth.users).
+// Este módulo provee helpers para:
+//   - Obtener el usuario actual (sesión leída de cookies)
+//   - Obtener la clínica activa
+//   - Hash de password (legacy, no usado con Supabase Auth)
 // ============================================================
 
-import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import bcrypt from 'bcryptjs';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'citaspro-dev-secret-change-in-prod';
-const COOKIE_NAME = 'citaspro_session';
-const SESSION_DAYS = 7;
-
-function getSecretKey() {
-  return new TextEncoder().encode(JWT_SECRET);
-}
-
-export interface SessionPayload {
-  userId: string;
-  email: string;
-  role: string;
-  plan: string;
-}
-
-export async function signSession(payload: SessionPayload): Promise<string> {
-  return await new SignJWT({ ...payload })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(`${SESSION_DAYS}d`)
-    .sign(getSecretKey());
-}
-
-export async function verifySession(token: string): Promise<SessionPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, getSecretKey());
-    return payload as unknown as SessionPayload;
-  } catch {
-    return null;
-  }
-}
-
-export async function getSession(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return await verifySession(token);
-}
-
-export async function setSessionCookie(token: string) {
-  const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: SESSION_DAYS * 24 * 60 * 60,
-    path: '/',
-  });
-}
-
-export async function clearSessionCookie() {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
-}
-
-export async function hashPassword(plain: string): Promise<string> {
-  return bcrypt.hash(plain, 10);
-}
-
-export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(plain, hash);
-}
-
-/// Obtiene el usuario actual con su perfil completo
+/// Obtiene el usuario actual autenticado vía Supabase + perfil de negocio
 export async function getCurrentUser() {
-  const session = await getSession();
-  if (!session) return null;
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser) return null;
+
+  // Buscar el perfil de negocio del usuario
   const user = await db.user.findUnique({
-    where: { id: session.userId },
+    where: { supabaseUid: authUser.id },
     include: {
       ownedClinics: true,
       memberships: { include: { clinic: true } },
     },
   });
+
   if (!user || !user.isActive) return null;
   return user;
 }
@@ -92,4 +41,39 @@ export async function getActiveClinicId(userId: string): Promise<string | null> 
     orderBy: { createdAt: 'asc' },
   });
   return clinic?.id ?? null;
+}
+
+/// Obtiene el ID de la clínica activa usando el UUID de Supabase Auth
+export async function getActiveClinicIdBySupabaseUid(supabaseUid: string): Promise<string | null> {
+  const user = await db.user.findUnique({
+    where: { supabaseUid },
+    select: { id: true },
+  });
+  if (!user) return null;
+  return getActiveClinicId(user.id);
+}
+
+// ============================================================
+// Legacy helpers (compatibilidad con código existente)
+// ============================================================
+// Estos se mantienen porque algunas rutas todavía los referencian,
+// pero con Supabase Auth ya no son necesarios para la mayoría
+// de los flujos. Se pueden remover gradualmente.
+
+export const SESSION_COOKIE_NAMES = ['sb-access-token', 'sb-refresh-token'];
+
+export async function isAuthenticated(): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return !!session;
+}
+
+export async function getSupabaseUser() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
 }

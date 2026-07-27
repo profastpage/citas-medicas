@@ -1,7 +1,10 @@
 // ============================================================
-// CitasPro SaaS — Schema Multi-tenant
+// CitasPro SaaS — Schema Multi-tenant (PostgreSQL / Supabase)
 // Fusiona el stack de MenuPro (auth, billing, planes, multi-tenant)
 // con el dominio médico del sistema PHP de citas.
+//
+// Migrado de SQLite a PostgreSQL para producción en Supabase.
+// RLS policies se aplican vía SQL aparte (supabase/rls-policies.sql).
 // ============================================================
 
 generator client {
@@ -9,8 +12,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================================
@@ -18,10 +22,13 @@ datasource db {
 // ============================================================
 
 /// Usuario autenticado (dueño de clínica, admin, médico, recepcionista)
+/// El auth real lo hace Supabase Auth; este modelo es el perfil de negocio.
+/// `supabaseUid` es el UUID que Supabase Auth asigna al crear el usuario.
 model User {
   id              String   @id @default(cuid())
+  supabaseUid     String   @unique // UUID de auth.users en Supabase
   email           String   @unique
-  passwordHash    String
+  passwordHash    String   @default("") // legacy: ya no se usa con Supabase Auth, se mantiene por compat
   fullName        String
   phone           String?
   avatarUrl       String?
@@ -31,15 +38,19 @@ model User {
   mpStatus        String?
   currentPeriodEnd DateTime?
   isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
 
   ownedClinics    Clinic[] @relation("OwnedClinics")
   memberships     ClinicMember[]
   auditLogs       AuditLog[]
+
+  @@index([email])
+  @@index([supabaseUid])
 }
 
 /// Clínica = organización multi-tenant (cada cliente SaaS puede tener 1 o varias)
+/// Una clínica puede ser: consultorio privado, centro médico, hospital, etc.
 model Clinic {
   id              String   @id @default(cuid())
   ownerId         String
@@ -54,8 +65,8 @@ model Clinic {
   themeColor      String   @default("#0ea5e9")
   brandingText    String   @default("Gestionado con CitasPro")
   isWhiteLabel    Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
 
   owner           User     @relation("OwnedClinics", fields: [ownerId], references: [id], onDelete: Cascade)
   members         ClinicMember[]
@@ -70,6 +81,8 @@ model Clinic {
   medications     Medication[]
   auditLogs       AuditLog[]
   files           PatientFile[]
+
+  @@index([ownerId])
 }
 
 /// Membresías de usuarios en clínicas (multi-rol)
@@ -78,13 +91,14 @@ model ClinicMember {
   userId      String
   clinicId    String
   role        String   // owner | doctor | receptionist | admin
-  invitedAt   DateTime @default(now())
-  acceptedAt  DateTime?
+  invitedAt   DateTime @default(now()) @db.Timestamptz
+  acceptedAt  DateTime? @db.Timestamptz
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   clinic      Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
   @@unique([userId, clinicId])
+  @@index([clinicId])
 }
 
 // ============================================================
@@ -98,13 +112,14 @@ model Specialty {
   name        String
   description String?
   isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  createdAt   DateTime @default(now()) @db.Timestamptz
 
   clinic      Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   doctors     Doctor[]
   interconsults Interconsult[]
 
   @@unique([clinicId, name])
+  @@index([clinicId])
 }
 
 /// Servicios médicos (Consulta, Electrocardiograma, etc.) con precio
@@ -116,12 +131,13 @@ model Service {
   price       Float
   durationMin Int      @default(30) // duración por defecto en minutos
   isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  createdAt   DateTime @default(now()) @db.Timestamptz
 
   clinic      Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   appointments Appointment[]
 
   @@unique([clinicId, name])
+  @@index([clinicId])
 }
 
 /// Médico vinculado a un usuario y a una clínica
@@ -138,7 +154,7 @@ model Doctor {
   bio            String?
   consultationPrice Float?
   isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
+  createdAt      DateTime @default(now()) @db.Timestamptz
 
   clinic         Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   specialty      Specialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
@@ -159,12 +175,13 @@ model DoctorSchedule {
   startTime    String   // "08:00"
   endTime      String   // "18:00"
   isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  createdAt    DateTime @default(now()) @db.Timestamptz
 
   clinic       Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   doctor       Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
   @@index([doctorId, dayOfWeek])
+  @@index([clinicId])
 }
 
 /// Paciente (datos demográficos + historia clínica)
@@ -176,7 +193,7 @@ model Patient {
   fullName            String
   documentType        String?  // DNI | CE | Pasaporte
   documentId          String?
-  birthDate           DateTime?
+  birthDate           DateTime? @db.Timestamptz
   sex                 String?  // M | F | Otro
   phone               String?
   email               String?
@@ -190,8 +207,8 @@ model Patient {
   medicalRecordNumber String?  // N° historia clínica
   notes               String?
   isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime @default(now()) @db.Timestamptz
+  updatedAt           DateTime @updatedAt @db.Timestamptz
 
   clinic              Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   appointments        Appointment[]
@@ -209,7 +226,7 @@ model Appointment {
   patientId           String
   doctorId            String
   serviceId           String?
-  appointmentDate     DateTime
+  appointmentDate     DateTime @db.Timestamptz
   durationMin         Int      @default(30)
   reason              String?  // motivo de consulta
   status              String   @default("pendiente") // pendiente | confirmada | en_atencion | finalizada | cancelada | no_asistio
@@ -234,13 +251,13 @@ model Appointment {
   treatment           String?  // tratamiento
   prescription        String?  // prescripción
   restDays            Int      @default(0)
-  restEndDate         DateTime?
-  followUpDate        DateTime? // fecha de control
+  restEndDate         DateTime? @db.Timestamptz
+  followUpDate        DateTime? @db.Timestamptz // fecha de control
 
   interconsultSpecialtyId String? // interconsulta a especialidad
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime @default(now()) @db.Timestamptz
+  updatedAt           DateTime @updatedAt @db.Timestamptz
 
   clinic              Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient             Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
@@ -260,10 +277,13 @@ model Interconsult {
   appointmentId   String
   specialtyId     String
   notes           String?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime @default(now()) @db.Timestamptz
 
   appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   specialty       Specialty   @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@index([specialtyId])
 }
 
 // ============================================================
@@ -279,7 +299,7 @@ model Payment {
   method          String   // efectivo | tarjeta | yape | plin | transferencia
   reference       String?
   notes           String?
-  paymentDate     DateTime @default(now())
+  paymentDate     DateTime @default(now()) @db.Timestamptz
 
   clinic          Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
@@ -295,8 +315,8 @@ model CashSession {
   openedByUserId  String
   openingAmount   Float    @default(0)
   closingAmount   Float?
-  openedAt        DateTime @default(now())
-  closedAt        DateTime?
+  openedAt        DateTime @default(now()) @db.Timestamptz
+  closedAt        DateTime? @db.Timestamptz
   status          String   @default("abierta") // abierta | cerrada
   notes           String?
   expenses        CashExpense[]
@@ -312,9 +332,11 @@ model CashExpense {
   cashSessionId   String
   description     String
   amount          Float
-  expenseDate     DateTime @default(now())
+  expenseDate     DateTime @default(now()) @db.Timestamptz
 
   cashSession     CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+
+  @@index([cashSessionId])
 }
 
 // ============================================================
@@ -331,10 +353,10 @@ model Medication {
   stock           Int      @default(0)
   minStock        Int      @default(5)
   unitPrice       Float?
-  expiryDate      DateTime?
+  expiryDate      DateTime? @db.Timestamptz
   isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
 
   clinic          Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
@@ -346,21 +368,23 @@ model Medication {
 // ============================================================
 
 /// Archivos PDF/imágenes subidos a la historia del paciente
+/// El archivo vive en Supabase Storage; aquí solo guardamos la URL y metadatos.
 model PatientFile {
   id              String   @id @default(cuid())
   clinicId        String
   patientId       String
   fileName        String
-  fileUrl         String
+  fileUrl         String   // URL pública o firmada de Supabase Storage
   fileType        String?  // pdf | jpg | png | ...
   fileSize        Int?
   description     String?
-  uploadedAt      DateTime @default(now())
+  uploadedAt      DateTime @default(now()) @db.Timestamptz
 
   clinic          Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   @@index([patientId])
+  @@index([clinicId])
 }
 
 // ============================================================
@@ -378,7 +402,7 @@ model AuditLog {
   description     String?
   ipAddress       String?
   userAgent       String?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime @default(now()) @db.Timestamptz
 
   clinic          Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)

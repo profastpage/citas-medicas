@@ -1,24 +1,38 @@
 // ============================================================
 // CitasPro SaaS — Middleware de autenticación
 // ============================================================
+// Refresca la sesión de Supabase Auth en cada request y
+// protege rutas privadas. Si el usuario no está autenticado,
+// redirige a /login (o devuelve 401 si es API).
+// ============================================================
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { verifySession } from '@/lib/auth';
+import { createSupabaseMiddlewareClient } from '@/lib/supabase/middleware';
 
 const PUBLIC_PATHS = ['/', '/login', '/register', '/api/auth/login', '/api/auth/register', '/api/health'];
-const PUBLIC_PREFIXES = ['/api/webhooks/', '/_next/', '/icons/', '/manifest.json', '/favicon'];
+const PUBLIC_PREFIXES = [
+  '/api/webhooks/',
+  '/_next/',
+  '/icons/',
+  '/manifest.json',
+  '/favicon',
+  '/auth/callback', // OAuth callback
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Permitir assets y rutas públicas
+  // Permitir assets y rutas públicas sin verificar sesión
   if (PUBLIC_PATHS.includes(pathname) || PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Verificar sesión
-  const token = req.cookies.get('citaspro_session')?.value;
-  const session = token ? await verifySession(token) : null;
+  // Crear cliente Supabase (refresca sesión expirada automáticamente)
+  const { supabase, res } = createSupabaseMiddlewareClient(req);
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   if (!session) {
     // Si es una llamada API, devolver 401
@@ -31,7 +45,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  // Sesión válida: devolver la respuesta con cookies posiblemente refrescadas
+  return res;
 }
 
 export const config = {
