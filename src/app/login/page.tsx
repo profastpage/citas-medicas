@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Stethoscope, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/dashboard';
@@ -48,7 +48,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07070b] text-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-3">
           <Link href="/" className="inline-flex items-center gap-2">
@@ -57,14 +57,14 @@ export default function LoginPage() {
             </div>
             <span className="text-2xl font-bold">CitasPro</span>
           </Link>
-          <p className="text-white/60 text-sm">
+          <p className="text-muted-foreground text-sm">
             Inicia sesión para gestionar tu clínica
           </p>
         </div>
 
         <form
           onSubmit={onSubmit}
-          className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4"
+          className="bg-muted/50 border border-border rounded-2xl p-6 space-y-4"
         >
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg p-3 flex items-center gap-2">
@@ -82,7 +82,7 @@ export default function LoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="doctor@clinica.com"
-              className="bg-white/5 border-white/10"
+              className="bg-muted/50 border-border"
             />
           </div>
 
@@ -95,7 +95,7 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="bg-white/5 border-white/10"
+              className="bg-muted/50 border-border"
             />
           </div>
 
@@ -110,7 +110,7 @@ export default function LoginPage() {
             Iniciar sesión
           </Button>
 
-          <p className="text-center text-sm text-white/60">
+          <p className="text-center text-sm text-muted-foreground">
             ¿No tienes cuenta?{' '}
             <Link href="/register" className="text-[#0ea5e9] hover:underline">
               Regístrate gratis
@@ -119,5 +119,13 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

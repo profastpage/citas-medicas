@@ -165,7 +165,7 @@ export function CitasClient(props: Props) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold">Citas</h1>
-            <p className="text-white/60 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               Gestiona el calendario de tu clínica
             </p>
           </div>
@@ -176,7 +176,7 @@ export function CitasClient(props: Props) {
                 Nueva cita
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg bg-[#0a0a14] border-white/10">
+            <DialogContent className="max-w-lg bg-sidebar border-border">
               <DialogHeader>
                 <DialogTitle>Nueva cita</DialogTitle>
               </DialogHeader>
@@ -184,10 +184,10 @@ export function CitasClient(props: Props) {
                 <div>
                   <Label>Paciente *</Label>
                   <Select value={form.patientId} onValueChange={v => setForm({ ...form, patientId: v })}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
+                    <SelectTrigger className="bg-muted/50 border-border">
                       <SelectValue placeholder="Selecciona paciente" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#0a0a14] border-white/10 max-h-60">
+                    <SelectContent className="bg-sidebar border-border max-h-60">
                       {patients.map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                       ))}
@@ -199,10 +199,10 @@ export function CitasClient(props: Props) {
                   <div>
                     <Label>Médico *</Label>
                     <Select value={form.doctorId} onValueChange={v => setForm({ ...form, doctorId: v })}>
-                      <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectTrigger className="bg-muted/50 border-border">
                         <SelectValue placeholder="Médico" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0a0a14] border-white/10 max-h-60">
+                      <SelectContent className="bg-sidebar border-border max-h-60">
                         {doctors.map(d => (
                           <SelectItem key={d.id} value={d.id}>{d.name} — {d.specialty}</SelectItem>
                         ))}
@@ -212,10 +212,10 @@ export function CitasClient(props: Props) {
                   <div>
                     <Label>Servicio</Label>
                     <Select value={form.serviceId} onValueChange={v => setForm({ ...form, serviceId: v })}>
-                      <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectTrigger className="bg-muted/50 border-border">
                         <SelectValue placeholder="Servicio" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0a0a14] border-white/10 max-h-60">
+                      <SelectContent className="bg-sidebar border-border max-h-60">
                         {services.map(s => (
                           <SelectItem key={s.id} value={s.id}>{s.name} — S/ {s.price}</SelectItem>
                         ))}
@@ -232,7 +232,7 @@ export function CitasClient(props: Props) {
                       required
                       value={form.date}
                       onChange={e => setForm({ ...form, date: e.target.value })}
-                      className="bg-white/5 border-white/10"
+                      className="bg-muted/50 border-border"
                     />
                   </div>
                   <div>
@@ -242,7 +242,7 @@ export function CitasClient(props: Props) {
                       required
                       value={form.time}
                       onChange={e => setForm({ ...form, time: e.target.value })}
-                      className="bg-white/5 border-white/10"
+                      className="bg-muted/50 border-border"
                     />
                   </div>
                 </div>
@@ -253,7 +253,7 @@ export function CitasClient(props: Props) {
                     value={form.reason}
                     onChange={e => setForm({ ...form, reason: e.target.value })}
                     placeholder="Motivo de la cita..."
-                    className="bg-white/5 border-white/10"
+                    className="bg-muted/50 border-border"
                   />
                 </div>
 
@@ -270,15 +270,15 @@ export function CitasClient(props: Props) {
         </div>
 
         {/* Controles */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-3">
+        <div className="bg-muted/50 border border-border rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-3">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={prevDay} className="text-white/60 hover:text-white">
+            <Button variant="ghost" size="sm" onClick={prevDay} className="text-muted-foreground hover:text-foreground">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <Button variant="ghost" size="sm" onClick={today} className="text-white">
               Hoy
             </Button>
-            <Button variant="ghost" size="sm" onClick={nextDay} className="text-white/60 hover:text-white">
+            <Button variant="ghost" size="sm" onClick={nextDay} className="text-muted-foreground hover:text-foreground">
               <ChevronRight className="w-4 h-4" />
             </Button>
             <span className="ml-2 text-sm font-medium capitalize">
@@ -288,11 +288,11 @@ export function CitasClient(props: Props) {
 
           <div className="md:ml-auto flex flex-col sm:flex-row gap-2">
             <Select value={doctorFilter} onValueChange={setDoctorFilter}>
-              <SelectTrigger className="bg-white/5 border-white/10 w-full sm:w-48">
+              <SelectTrigger className="bg-muted/50 border-border w-full sm:w-48">
                 <Filter className="w-3 h-3 mr-1" />
                 <SelectValue placeholder="Médico" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0a0a14] border-white/10">
+              <SelectContent className="bg-sidebar border-border">
                 <SelectItem value="all">Todos los médicos</SelectItem>
                 {doctors.map(d => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
@@ -301,21 +301,21 @@ export function CitasClient(props: Props) {
             </Select>
 
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
               <Input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar paciente, médico..."
-                className="bg-white/5 border-white/10 pl-8 w-full sm:w-64"
+                className="bg-muted/50 border-border pl-8 w-full sm:w-64"
               />
             </div>
 
-            <div className="flex gap-1 border border-white/10 rounded-lg p-1">
+            <div className="flex gap-1 border border-border rounded-lg p-1">
               <Button
                 size="sm"
                 variant={view === 'day' ? 'default' : 'ghost'}
                 onClick={() => setView('day')}
-                className={view === 'day' ? 'bg-[#0ea5e9]' : 'text-white/60'}
+                className={view === 'day' ? 'bg-[#0ea5e9]' : 'text-muted-foreground'}
               >
                 Día
               </Button>
@@ -323,7 +323,7 @@ export function CitasClient(props: Props) {
                 size="sm"
                 variant={view === 'list' ? 'default' : 'ghost'}
                 onClick={() => setView('list')}
-                className={view === 'list' ? 'bg-[#0ea5e9]' : 'text-white/60'}
+                className={view === 'list' ? 'bg-[#0ea5e9]' : 'text-muted-foreground'}
               >
                 Lista
               </Button>
@@ -333,7 +333,7 @@ export function CitasClient(props: Props) {
 
         {/* Vista Día */}
         {view === 'day' && (
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+          <div className="bg-muted/50 border border-border rounded-2xl p-4">
             <div className="grid grid-cols-1 lg:grid-cols-[80px_1fr] gap-2">
               {HOURS.map(hour => {
                 const hourAppts = dayAppointments.filter(a => {
@@ -342,10 +342,10 @@ export function CitasClient(props: Props) {
                 });
                 return (
                   <div key={hour} className="contents">
-                    <div className="text-right pr-2 text-xs text-white/40 py-2 border-t border-white/5">
+                    <div className="text-right pr-2 text-xs text-muted-foreground/70 py-2 border-t border-border/60">
                       {hour}:00
                     </div>
-                    <div className="border-t border-white/5 py-2 min-h-[60px]">
+                    <div className="border-t border-border/60 py-2 min-h-[60px]">
                       <div className="space-y-1">
                         {hourAppts.map(a => {
                           const status = STATUS_LABELS[a.status] ?? STATUS_LABELS.pendiente;
@@ -353,14 +353,14 @@ export function CitasClient(props: Props) {
                           return (
                             <div
                               key={a.id}
-                              className="bg-white/[0.04] border border-white/10 rounded-lg p-2 flex items-center gap-3"
+                              className="bg-muted/60 border border-border rounded-lg p-2 flex items-center gap-3"
                             >
                               <div className="text-xs font-mono text-[#0ea5e9] w-12">
                                 {format(d, 'HH:mm')}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-medium truncate">{a.patientName}</div>
-                                <div className="text-xs text-white/40 truncate">
+                                <div className="text-xs text-muted-foreground/70 truncate">
                                   {a.doctorName} · {a.serviceName ?? 'Sin servicio'}
                                 </div>
                               </div>
@@ -368,10 +368,10 @@ export function CitasClient(props: Props) {
                                 value={a.status}
                                 onValueChange={v => changeStatus(a.id, v)}
                               >
-                                <SelectTrigger className="h-7 w-32 text-xs bg-white/5 border-white/10">
+                                <SelectTrigger className="h-7 w-32 text-xs bg-muted/50 border-border">
                                   <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#0a0a14] border-white/10 text-xs">
+                                <SelectContent className="bg-sidebar border-border text-xs">
                                   {Object.entries(STATUS_LABELS).map(([k, v]) => (
                                     <SelectItem key={k} value={k}>{v.label}</SelectItem>
                                   ))}
@@ -391,9 +391,9 @@ export function CitasClient(props: Props) {
 
         {/* Vista Lista */}
         {view === 'list' && (
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+          <div className="bg-muted/50 border border-border rounded-2xl p-4">
             {filteredAppointments.length === 0 ? (
-              <div className="py-12 text-center text-white/40">
+              <div className="py-12 text-center text-muted-foreground/70">
                 <Calendar className="w-10 h-10 mx-auto mb-3 opacity-50" />
                 <p>No hay citas que mostrar</p>
               </div>
@@ -405,10 +405,10 @@ export function CitasClient(props: Props) {
                   return (
                     <div
                       key={a.id}
-                      className="flex items-center gap-4 p-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/10 transition"
+                      className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 border border-border/60 hover:border-border transition"
                     >
                       <div className="text-center min-w-[70px]">
-                        <div className="text-xs text-white/40">
+                        <div className="text-xs text-muted-foreground/70">
                           {format(d, 'dd MMM', { locale: es })}
                         </div>
                         <div className="text-lg font-bold text-[#0ea5e9]">
@@ -417,12 +417,12 @@ export function CitasClient(props: Props) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{a.patientName}</div>
-                        <div className="text-xs text-white/40 truncate">
+                        <div className="text-xs text-muted-foreground/70 truncate">
                           {a.doctorName} · {a.serviceName ?? 'Sin servicio'}
                           {a.servicePrice ? ` · S/ ${a.servicePrice}` : ''}
                         </div>
                         {a.reason && (
-                          <div className="text-xs text-white/30 truncate mt-1">
+                          <div className="text-xs text-muted-foreground/60 truncate mt-1">
                             📝 {a.reason}
                           </div>
                         )}
@@ -431,10 +431,10 @@ export function CitasClient(props: Props) {
                         value={a.status}
                         onValueChange={v => changeStatus(a.id, v)}
                       >
-                        <SelectTrigger className="h-8 w-32 text-xs bg-white/5 border-white/10">
+                        <SelectTrigger className="h-8 w-32 text-xs bg-muted/50 border-border">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#0a0a14] border-white/10">
+                        <SelectContent className="bg-sidebar border-border">
                           {Object.entries(STATUS_LABELS).map(([k, v]) => (
                             <SelectItem key={k} value={k}>{v.label}</SelectItem>
                           ))}

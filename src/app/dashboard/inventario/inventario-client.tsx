@@ -94,7 +94,7 @@ export function InventarioClient(props: Props) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold">Inventario</h1>
-            <p className="text-white/60 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               {medications.length} medicamentos · {lowStock.length} con stock bajo · {expiringSoon.length} por vencer
             </p>
           </div>
@@ -105,41 +105,41 @@ export function InventarioClient(props: Props) {
                 Nuevo medicamento
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md bg-[#0a0a14] border-white/10">
+            <DialogContent className="max-w-md bg-sidebar border-border">
               <DialogHeader>
                 <DialogTitle>Nuevo medicamento</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div>
                   <Label>Nombre comercial *</Label>
-                  <Input value={form.commercialName} onChange={e => setForm({ ...form, commercialName: e.target.value })} className="bg-white/5 border-white/10" />
+                  <Input value={form.commercialName} onChange={e => setForm({ ...form, commercialName: e.target.value })} className="bg-muted/50 border-border" />
                 </div>
                 <div>
                   <Label>Nombre genérico</Label>
-                  <Input value={form.genericName} onChange={e => setForm({ ...form, genericName: e.target.value })} className="bg-white/5 border-white/10" />
+                  <Input value={form.genericName} onChange={e => setForm({ ...form, genericName: e.target.value })} className="bg-muted/50 border-border" />
                 </div>
                 <div>
                   <Label>Presentación</Label>
-                  <Input value={form.presentation} onChange={e => setForm({ ...form, presentation: e.target.value })} className="bg-white/5 border-white/10" placeholder="Tableta 500mg" />
+                  <Input value={form.presentation} onChange={e => setForm({ ...form, presentation: e.target.value })} className="bg-muted/50 border-border" placeholder="Tableta 500mg" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Stock</Label>
-                    <Input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                   <div>
                     <Label>Stock mínimo</Label>
-                    <Input type="number" value={form.minStock} onChange={e => setForm({ ...form, minStock: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input type="number" value={form.minStock} onChange={e => setForm({ ...form, minStock: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Precio unitario (S/)</Label>
-                    <Input type="number" value={form.unitPrice} onChange={e => setForm({ ...form, unitPrice: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input type="number" value={form.unitPrice} onChange={e => setForm({ ...form, unitPrice: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                   <div>
                     <Label>Vencimiento</Label>
-                    <Input type="date" value={form.expiryDate} onChange={e => setForm({ ...form, expiryDate: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input type="date" value={form.expiryDate} onChange={e => setForm({ ...form, expiryDate: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                 </div>
                 <Button onClick={submit} disabled={submitting} className="w-full bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]">
@@ -187,9 +187,9 @@ export function InventarioClient(props: Props) {
         )}
 
         {/* Tabla */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
+        <div className="bg-muted/50 border border-border rounded-2xl overflow-hidden">
           {medications.length === 0 ? (
-            <div className="py-16 text-center text-white/40">
+            <div className="py-16 text-center text-muted-foreground/70">
               <Pill className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No hay medicamentos registrados</p>
             </div>
@@ -197,7 +197,7 @@ export function InventarioClient(props: Props) {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-white/40 text-xs uppercase">
+                  <tr className="border-b border-border text-muted-foreground/70 text-xs uppercase">
                     <th className="text-left p-3">Nombre</th>
                     <th className="text-left p-3">Presentación</th>
                     <th className="text-center p-3">Stock</th>
@@ -212,22 +212,22 @@ export function InventarioClient(props: Props) {
                     const expiry = m.expiryDate ? new Date(m.expiryDate) : null;
                     const isExpired = expiry && isPast(expiry);
                     return (
-                      <tr key={m.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <tr key={m.id} className="border-b border-border/60 hover:bg-muted/30">
                         <td className="p-3">
                           <div className="font-medium">{m.commercialName}</div>
-                          {m.genericName && <div className="text-xs text-white/40">{m.genericName}</div>}
+                          {m.genericName && <div className="text-xs text-muted-foreground/70">{m.genericName}</div>}
                         </td>
-                        <td className="p-3 text-white/60">{m.presentation || '—'}</td>
+                        <td className="p-3 text-muted-foreground">{m.presentation || '—'}</td>
                         <td className="p-3 text-center">
                           <span className={isLow ? 'text-amber-300 font-bold' : ''}>{m.stock}</span>
                         </td>
-                        <td className="p-3 text-center text-white/40">{m.minStock}</td>
+                        <td className="p-3 text-center text-muted-foreground/70">{m.minStock}</td>
                         <td className="p-3 text-right">
                           {m.unitPrice ? `S/ ${m.unitPrice.toFixed(2)}` : '—'}
                         </td>
                         <td className="p-3 text-center">
                           {expiry ? (
-                            <span className={isExpired ? 'text-red-300' : 'text-white/60'}>
+                            <span className={isExpired ? 'text-red-300' : 'text-muted-foreground'}>
                               {format(expiry, 'dd/MM/yy')}
                             </span>
                           ) : '—'}

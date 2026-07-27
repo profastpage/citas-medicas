@@ -45,7 +45,7 @@ export function EquipoClient(props: Props) {
               <Lock className="w-8 h-8 text-amber-400" />
             </div>
             <h2 className="text-2xl font-bold">Gestión de equipo es una función Premium</h2>
-            <p className="text-white/60">
+            <p className="text-muted-foreground">
               Invita médicos, recepcionistas y administradores con roles diferenciados.
               Disponible desde el plan Premium (S/ 99/mes).
             </p>
@@ -66,14 +66,14 @@ export function EquipoClient(props: Props) {
       <div className="p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Equipo</h1>
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             {members.length} miembros en la clínica
           </p>
         </div>
 
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
+        <div className="bg-muted/50 border border-border rounded-2xl overflow-hidden">
           {members.length === 0 ? (
-            <div className="py-16 text-center text-white/40">
+            <div className="py-16 text-center text-muted-foreground/70">
               <UserCog className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>Sin miembros registrados</p>
             </div>
@@ -86,13 +86,13 @@ export function EquipoClient(props: Props) {
                   </div>
                   <div className="flex-1">
                     <div className="font-medium">{m.name}</div>
-                    <div className="text-xs text-white/40">{m.email}</div>
+                    <div className="text-xs text-muted-foreground/70">{m.email}</div>
                   </div>
-                  <Badge variant="outline" className="border-white/20 text-white/60">
+                  <Badge variant="outline" className="border-border text-muted-foreground">
                     {ROLE_LABELS[m.role] || m.role}
                   </Badge>
                   {m.acceptedAt ? (
-                    <span className="text-xs text-white/40">
+                    <span className="text-xs text-muted-foreground/70">
                       Desde {format(new Date(m.acceptedAt), 'dd/MM/yy', { locale: es })}
                     </span>
                   ) : (
@@ -106,9 +106,9 @@ export function EquipoClient(props: Props) {
           )}
         </div>
 
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+        <div className="bg-muted/50 border border-border rounded-2xl p-6">
           <h3 className="font-bold mb-2">Invitar miembro</h3>
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-muted-foreground/70">
             Próximamente: invitar por email a tu equipo con roles personalizados.
             Por ahora, los miembros se agregan vía API o base de datos.
           </p>

@@ -55,7 +55,7 @@ export function ReportesClient(props: Props) {
               <Lock className="w-8 h-8 text-amber-400" />
             </div>
             <h2 className="text-2xl font-bold">Reportes avanzados es una función Premium</h2>
-            <p className="text-white/60">
+            <p className="text-muted-foreground">
               Incluye gráficos de ingresos por médico, evolución de citas y análisis de ocupación.
               Disponible desde el plan Premium (S/ 99/mes).
             </p>
@@ -82,7 +82,7 @@ export function ReportesClient(props: Props) {
       <div className="p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Reportes</h1>
-          <p className="text-white/60 text-sm mt-1">Últimos 30 días</p>
+          <p className="text-muted-foreground text-sm mt-1">Últimos 30 días</p>
         </div>
 
         {/* KPIs */}
@@ -94,7 +94,7 @@ export function ReportesClient(props: Props) {
         </div>
 
         {/* Evolución diaria */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+        <div className="bg-muted/50 border border-border rounded-2xl p-6">
           <h2 className="font-bold mb-4">Evolución de citas e ingresos (30 días)</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data.revenueByDay}>
@@ -117,7 +117,7 @@ export function ReportesClient(props: Props) {
 
         <div className="grid lg:grid-cols-2 gap-4">
           {/* Por médico */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+          <div className="bg-muted/50 border border-border rounded-2xl p-6">
             <h2 className="font-bold mb-4">Citas por médico</h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={data.revenueByDoctor} layout="vertical">
@@ -138,10 +138,10 @@ export function ReportesClient(props: Props) {
           </div>
 
           {/* Estados */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+          <div className="bg-muted/50 border border-border rounded-2xl p-6">
             <h2 className="font-bold mb-4">Distribución por estado</h2>
             {pieData.length === 0 ? (
-              <p className="text-white/40 text-center py-12">Sin datos suficientes</p>
+              <p className="text-muted-foreground/70 text-center py-12">Sin datos suficientes</p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -168,12 +168,12 @@ export function ReportesClient(props: Props) {
         </div>
 
         {/* Tabla de médicos */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+        <div className="bg-muted/50 border border-border rounded-2xl p-6">
           <h2 className="font-bold mb-4">Ranking de médicos</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-white/40 text-xs uppercase">
+                <tr className="border-b border-border text-muted-foreground/70 text-xs uppercase">
                   <th className="text-left p-2">Médico</th>
                   <th className="text-left p-2">Especialidad</th>
                   <th className="text-center p-2">Citas</th>
@@ -184,9 +184,9 @@ export function ReportesClient(props: Props) {
                 {data.revenueByDoctor
                   .sort((a, b) => b.revenue - a.revenue)
                   .map((d, i) => (
-                    <tr key={i} className="border-b border-white/5">
+                    <tr key={i} className="border-b border-border/60">
                       <td className="p-2">{d.name}</td>
-                      <td className="p-2 text-white/60">{d.specialty}</td>
+                      <td className="p-2 text-muted-foreground">{d.specialty}</td>
                       <td className="p-2 text-center">{d.appointments}</td>
                       <td className="p-2 text-right text-emerald-400 font-bold">S/ {d.revenue.toFixed(2)}</td>
                     </tr>
@@ -202,9 +202,9 @@ export function ReportesClient(props: Props) {
 
 function Kpi({ icon: Icon, label, value, color }: { icon: typeof BarChart3; label: string; value: string; color: string }) {
   return (
-    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+    <div className="bg-muted/50 border border-border rounded-2xl p-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-white/40">{label}</span>
+        <span className="text-xs text-muted-foreground/70">{label}</span>
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"
           style={{ background: `${color}20`, color }}

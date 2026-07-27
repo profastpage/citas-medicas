@@ -66,7 +66,7 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
       <div className="p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Planes y facturación</h1>
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Gestiona tu suscripción a CitasPro
           </p>
         </div>
@@ -81,23 +81,23 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
         >
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs uppercase tracking-wider text-white/40 mb-1">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground/70 mb-1">
                 Plan actual
               </div>
               <div className="flex items-baseline gap-3">
                 <h2 className="text-2xl font-bold" style={{ color: currentPlan.color }}>
                   {currentPlan.name}
                 </h2>
-                <span className="text-white/40 text-sm">
+                <span className="text-muted-foreground/70 text-sm">
                   {currentPlan.priceMonthly === 0
                     ? 'Gratis para siempre'
                     : `S/ ${currentPlan.priceMonthly}/mes`}
                 </span>
               </div>
-              <p className="text-white/60 text-sm mt-1">{currentPlan.tagline}</p>
+              <p className="text-muted-foreground text-sm mt-1">{currentPlan.tagline}</p>
 
               {mpStatus === 'authorized' && currentPeriodEnd && (
-                <div className="mt-3 text-sm text-white/60 flex items-center gap-2">
+                <div className="mt-3 text-sm text-muted-foreground flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Próximo cobro: {new Date(currentPeriodEnd).toLocaleDateString('es-PE')}
                 </div>
@@ -129,7 +129,7 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
                   className={`relative rounded-2xl p-6 border ${
                     plan.highlight
                       ? 'border-[#d4af37]/40 bg-gradient-to-b from-[#d4af37]/5 to-transparent'
-                      : 'border-white/10 bg-white/[0.02]'
+                      : 'border-border bg-muted/30'
                   } ${isCurrent ? 'ring-2 ring-[#0ea5e9]' : ''}`}
                 >
                   {plan.badge && (
@@ -144,18 +144,18 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
                   <h3 className="text-lg font-bold mb-1" style={{ color: plan.color }}>
                     {plan.name}
                   </h3>
-                  <p className="text-xs text-white/40 mb-4">{plan.tagline}</p>
+                  <p className="text-xs text-muted-foreground/70 mb-4">{plan.tagline}</p>
 
                   <div className="mb-4">
                     <span className="text-3xl font-bold">S/ {plan.priceMonthly}</span>
-                    <span className="text-white/40 text-sm">/mes</span>
+                    <span className="text-muted-foreground/70 text-sm">/mes</span>
                   </div>
 
                   <ul className="space-y-2 text-sm mb-6 min-h-[180px]">
                     {plan.features.slice(0, 7).map((f, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-white/70">{f}</span>
+                        <span className="text-muted-foreground">{f}</span>
                       </li>
                     ))}
                   </ul>
@@ -178,7 +178,7 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
                       onClick={() => upgrade(plan.id)}
                       disabled={loading === plan.id}
                       variant="outline"
-                      className="w-full border-white/10"
+                      className="w-full border-border"
                     >
                       Cambiar a {plan.name}
                     </Button>
@@ -190,21 +190,21 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
         </div>
 
         {/* Comparativa */}
-        <div className="overflow-x-auto bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+        <div className="overflow-x-auto bg-muted/50 border border-border rounded-2xl p-6">
           <h2 className="text-xl font-bold mb-4">Comparativa detallada</h2>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-2 text-white/60">Característica</th>
-                <th className="text-center py-3 px-2 text-white/60">Free</th>
-                <th className="text-center py-3 px-2 text-white/60">Pro</th>
-                <th className="text-center py-3 px-2 text-white/60">Premium</th>
-                <th className="text-center py-3 px-2 text-white/60">Full</th>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-2 text-muted-foreground">Característica</th>
+                <th className="text-center py-3 px-2 text-muted-foreground">Free</th>
+                <th className="text-center py-3 px-2 text-muted-foreground">Pro</th>
+                <th className="text-center py-3 px-2 text-muted-foreground">Premium</th>
+                <th className="text-center py-3 px-2 text-muted-foreground">Full</th>
               </tr>
             </thead>
             <tbody>
               {LIMIT_COMPARISON.map((row, i) => (
-                <tr key={i} className="border-b border-white/5">
+                <tr key={i} className="border-b border-border/60">
                   <td className="py-2 px-2">
                     <span className="mr-2">{row.icon}</span>
                     {row.label}

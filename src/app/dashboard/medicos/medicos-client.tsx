@@ -88,7 +88,7 @@ export function MedicosClient(props: Props) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold">Médicos</h1>
-            <p className="text-white/60 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               {doctors.length} profesionales · {specialties.length} especialidades
             </p>
           </div>
@@ -99,20 +99,20 @@ export function MedicosClient(props: Props) {
                 Nuevo médico
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg bg-[#0a0a14] border-white/10">
+            <DialogContent className="max-w-lg bg-sidebar border-border">
               <DialogHeader>
                 <DialogTitle>Nuevo médico</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div>
                   <Label>Nombre completo *</Label>
-                  <Input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} className="bg-white/5 border-white/10" placeholder="Dr. Juan Pérez" />
+                  <Input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} className="bg-muted/50 border-border" placeholder="Dr. Juan Pérez" />
                 </div>
                 <div>
                   <Label>Especialidad *</Label>
                   <Select value={form.specialtyId} onValueChange={v => setForm({ ...form, specialtyId: v })}>
-                    <SelectTrigger className="bg-white/5 border-white/10"><SelectValue placeholder="Selecciona" /></SelectTrigger>
-                    <SelectContent className="bg-[#0a0a14] border-white/10">
+                    <SelectTrigger className="bg-muted/50 border-border"><SelectValue placeholder="Selecciona" /></SelectTrigger>
+                    <SelectContent className="bg-sidebar border-border">
                       {specialties.map(s => (
                         <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                       ))}
@@ -122,26 +122,26 @@ export function MedicosClient(props: Props) {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Colegiatura</Label>
-                    <Input value={form.colegiatura} onChange={e => setForm({ ...form, colegiatura: e.target.value })} className="bg-white/5 border-white/10" placeholder="CMP 12345" />
+                    <Input value={form.colegiatura} onChange={e => setForm({ ...form, colegiatura: e.target.value })} className="bg-muted/50 border-border" placeholder="CMP 12345" />
                   </div>
                   <div>
                     <Label>Precio consulta (S/)</Label>
-                    <Input type="number" value={form.consultationPrice} onChange={e => setForm({ ...form, consultationPrice: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input type="number" value={form.consultationPrice} onChange={e => setForm({ ...form, consultationPrice: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Teléfono</Label>
-                    <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                   <div>
                     <Label>Email</Label>
-                    <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                 </div>
                 <div>
                   <Label>Bio / descripción</Label>
-                  <Textarea value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} className="bg-white/5 border-white/10" />
+                  <Textarea value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} className="bg-muted/50 border-border" />
                 </div>
                 <Button onClick={submit} disabled={submitting} className="w-full bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]">
                   {submitting ? 'Guardando...' : 'Crear médico'}
@@ -154,13 +154,13 @@ export function MedicosClient(props: Props) {
         {/* Grid de médicos */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {doctors.length === 0 ? (
-            <div className="col-span-full py-16 text-center text-white/40 bg-white/[0.03] border border-white/10 rounded-2xl">
+            <div className="col-span-full py-16 text-center text-muted-foreground/70 bg-muted/50 border border-border rounded-2xl">
               <Stethoscope className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No hay médicos registrados</p>
             </div>
           ) : (
             doctors.map(d => (
-              <div key={d.id} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
+              <div key={d.id} className="bg-muted/50 border border-border rounded-2xl p-5">
                 <div className="flex items-start gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0ea5e9] to-[#2563eb] flex items-center justify-center font-bold flex-shrink-0">
                     {d.fullName.split(' ').slice(0, 2).map(w => w[0]).join('')}
@@ -170,8 +170,8 @@ export function MedicosClient(props: Props) {
                     <div className="text-xs text-[#0ea5e9]">{d.specialtyName}</div>
                   </div>
                 </div>
-                {d.bio && <p className="text-sm text-white/60 mb-3 line-clamp-2">{d.bio}</p>}
-                <div className="space-y-1 text-xs text-white/40">
+                {d.bio && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{d.bio}</p>}
+                <div className="space-y-1 text-xs text-muted-foreground/70">
                   {d.colegiatura && (
                     <div className="flex items-center gap-2"><Award className="w-3 h-3" />CMP: {d.colegiatura}</div>
                   )}
@@ -182,8 +182,8 @@ export function MedicosClient(props: Props) {
                     <div className="flex items-center gap-2"><Mail className="w-3 h-3" />{d.email}</div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/10">
-                  <Badge variant="outline" className="text-white/60 border-white/20 text-xs">
+                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border">
+                  <Badge variant="outline" className="text-muted-foreground border-border text-xs">
                     <Calendar className="w-3 h-3 mr-1" />
                     {d.appointmentsCount} citas
                   </Badge>

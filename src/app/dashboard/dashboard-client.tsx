@@ -70,7 +70,7 @@ export function DashboardClient({
           <h1 className="text-2xl lg:text-3xl font-bold">
             Hola, {user.name.split(' ')[0]} 👋
           </h1>
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Resumen de {clinicName} · {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
@@ -108,11 +108,11 @@ export function DashboardClient({
         </div>
 
         {/* Próximas citas */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+        <div className="bg-muted/50 border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-bold text-lg">Próximas citas</h2>
-              <p className="text-white/40 text-sm">Siguientes 5 citas programadas</p>
+              <p className="text-muted-foreground/70 text-sm">Siguientes 5 citas programadas</p>
             </div>
             <Link
               href="/dashboard/citas"
@@ -123,7 +123,7 @@ export function DashboardClient({
           </div>
 
           {upcoming.length === 0 ? (
-            <div className="py-12 text-center text-white/40">
+            <div className="py-12 text-center text-muted-foreground/70">
               <Calendar className="w-10 h-10 mx-auto mb-3 opacity-50" />
               <p>No tienes citas programadas</p>
               <Link
@@ -141,10 +141,10 @@ export function DashboardClient({
                 return (
                   <div
                     key={apt.id}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/10 transition"
+                    className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 border border-border/60 hover:border-border transition"
                   >
                     <div className="text-center min-w-[60px]">
-                      <div className="text-xs text-white/40">
+                      <div className="text-xs text-muted-foreground/70">
                         {date.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}
                       </div>
                       <div className="text-lg font-bold text-[#0ea5e9]">
@@ -153,7 +153,7 @@ export function DashboardClient({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{apt.patientName}</div>
-                      <div className="text-xs text-white/40 truncate">
+                      <div className="text-xs text-muted-foreground/70 truncate">
                         {apt.doctorName} · {apt.serviceName ?? 'Sin servicio'}
                       </div>
                     </div>
@@ -212,9 +212,9 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+    <div className="bg-muted/50 border border-border rounded-2xl p-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-white/40">{label}</span>
+        <span className="text-xs text-muted-foreground/70">{label}</span>
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"
           style={{ background: `${color}20`, color }}
@@ -223,7 +223,7 @@ function StatCard({
         </div>
       </div>
       <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs text-white/40 mt-1">{sublabel}</div>
+      <div className="text-xs text-muted-foreground/70 mt-1">{sublabel}</div>
     </div>
   );
 }
@@ -244,7 +244,7 @@ function QuickAccess({
   return (
     <Link
       href={href}
-      className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-white/20 transition"
+      className="bg-muted/50 border border-border rounded-2xl p-5 flex items-center gap-4 hover:border-border transition"
     >
       <div
         className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -254,7 +254,7 @@ function QuickAccess({
       </div>
       <div>
         <div className="font-bold">{title}</div>
-        <div className="text-xs text-white/40">{desc}</div>
+        <div className="text-xs text-muted-foreground/70">{desc}</div>
       </div>
     </Link>
   );

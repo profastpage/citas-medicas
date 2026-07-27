@@ -62,7 +62,7 @@ export function AuditoriaClient(props: Props) {
               <Lock className="w-8 h-8 text-amber-400" />
             </div>
             <h2 className="text-2xl font-bold">Auditoría es una función Pro</h2>
-            <p className="text-white/60">
+            <p className="text-muted-foreground">
               Bitácora completa de cambios: quién, qué y cuándo.
               Disponible desde el plan Pro (S/ 50/mes).
             </p>
@@ -83,24 +83,24 @@ export function AuditoriaClient(props: Props) {
       <div className="p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Auditoría</h1>
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             {logs.length} eventos registrados
           </p>
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por acción, usuario, descripción..."
-            className="bg-white/5 border-white/10 pl-9"
+            className="bg-muted/50 border-border pl-9"
           />
         </div>
 
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
+        <div className="bg-muted/50 border border-border rounded-2xl overflow-hidden">
           {filtered.length === 0 ? (
-            <div className="py-16 text-center text-white/40">
+            <div className="py-16 text-center text-muted-foreground/70">
               <Shield className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>Sin eventos para mostrar</p>
             </div>
@@ -110,13 +110,13 @@ export function AuditoriaClient(props: Props) {
                 <div key={l.id} className="p-4 flex items-start gap-4">
                   <Badge
                     variant="outline"
-                    className={ACTION_COLORS[l.action] || 'border-white/20 text-white/60'}
+                    className={ACTION_COLORS[l.action] || 'border-border text-muted-foreground'}
                   >
                     {l.action}
                   </Badge>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm">{l.description}</div>
-                    <div className="text-xs text-white/40 mt-1">
+                    <div className="text-xs text-muted-foreground/70 mt-1">
                       {l.userName} · {l.entity} · {format(new Date(l.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
                       {l.ipAddress && ` · ${l.ipAddress}`}
                     </div>

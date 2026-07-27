@@ -84,13 +84,13 @@ export function ClinicaClient(props: Props) {
       <div className="p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Configuración de la clínica</h1>
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Datos generales, branding y especialidades
           </p>
         </div>
 
         {/* Datos generales */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
+        <div className="bg-muted/50 border border-border rounded-2xl p-6 space-y-4">
           <h2 className="font-bold flex items-center gap-2">
             <Building2 className="w-4 h-4 text-[#0ea5e9]" />
             Datos generales
@@ -98,37 +98,37 @@ export function ClinicaClient(props: Props) {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <Label>Nombre de la clínica</Label>
-              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-white/5 border-white/10" />
+              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-muted/50 border-border" />
             </div>
             <div>
               <Label>RUC</Label>
-              <Input value={form.ruc} onChange={e => setForm({ ...form, ruc: e.target.value })} className="bg-white/5 border-white/10" />
+              <Input value={form.ruc} onChange={e => setForm({ ...form, ruc: e.target.value })} className="bg-muted/50 border-border" />
             </div>
             <div>
               <Label>Teléfono</Label>
-              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="bg-white/5 border-white/10" />
+              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="bg-muted/50 border-border" />
             </div>
             <div>
               <Label>Email</Label>
-              <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="bg-white/5 border-white/10" />
+              <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="bg-muted/50 border-border" />
             </div>
             <div className="md:col-span-2">
               <Label>Dirección</Label>
-              <Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="bg-white/5 border-white/10" />
+              <Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="bg-muted/50 border-border" />
             </div>
             <div>
               <Label>Moneda</Label>
-              <Input value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })} className="bg-white/5 border-white/10" />
+              <Input value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })} className="bg-muted/50 border-border" />
             </div>
             <div>
               <Label>URL pública (slug)</Label>
-              <Input value={form.slug} disabled className="bg-white/5 border-white/10 opacity-60" />
+              <Input value={form.slug} disabled className="bg-muted/50 border-border opacity-60" />
             </div>
           </div>
         </div>
 
         {/* Branding */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
+        <div className="bg-muted/50 border border-border rounded-2xl p-6 space-y-4">
           <h2 className="font-bold flex items-center gap-2">
             <BadgeCheck className="w-4 h-4 text-[#d4af37]" />
             Branding
@@ -137,13 +137,13 @@ export function ClinicaClient(props: Props) {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>Texto de marca</Label>
-                <Input value={form.brandingText} onChange={e => setForm({ ...form, brandingText: e.target.value })} className="bg-white/5 border-white/10" />
+                <Input value={form.brandingText} onChange={e => setForm({ ...form, brandingText: e.target.value })} className="bg-muted/50 border-border" />
               </div>
               <div>
                 <Label>Color de tema</Label>
                 <div className="flex gap-2">
-                  <Input type="color" value={form.themeColor} onChange={e => setForm({ ...form, themeColor: e.target.value })} className="w-16 h-10 p-1 bg-white/5 border-white/10" />
-                  <Input value={form.themeColor} onChange={e => setForm({ ...form, themeColor: e.target.value })} className="bg-white/5 border-white/10" />
+                  <Input type="color" value={form.themeColor} onChange={e => setForm({ ...form, themeColor: e.target.value })} className="w-16 h-10 p-1 bg-muted/50 border-border" />
+                  <Input value={form.themeColor} onChange={e => setForm({ ...form, themeColor: e.target.value })} className="bg-muted/50 border-border" />
                 </div>
               </div>
               <div className="md:col-span-2 flex items-center gap-2">
@@ -161,23 +161,23 @@ export function ClinicaClient(props: Props) {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-muted-foreground/70">
               El branding personalizado está disponible en el plan Pro o superior.
             </p>
           )}
         </div>
 
         {/* Especialidades */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
+        <div className="bg-muted/50 border border-border rounded-2xl p-6 space-y-4">
           <h2 className="font-bold">Especialidades médicas</h2>
           <div className="flex flex-wrap gap-2">
             {specialties.map(s => (
-              <span key={s.id} className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm flex items-center gap-2">
+              <span key={s.id} className="px-3 py-1.5 rounded-full bg-muted/50 border border-border text-sm flex items-center gap-2">
                 {s.name}
               </span>
             ))}
             {specialties.length === 0 && (
-              <p className="text-sm text-white/40">Sin especialidades. Crea la primera abajo.</p>
+              <p className="text-sm text-muted-foreground/70">Sin especialidades. Crea la primera abajo.</p>
             )}
           </div>
           <div className="flex gap-2">
@@ -185,10 +185,10 @@ export function ClinicaClient(props: Props) {
               value={newSpecialty}
               onChange={e => setNewSpecialty(e.target.value)}
               placeholder="Nueva especialidad (ej. Cardiología)"
-              className="bg-white/5 border-white/10"
+              className="bg-muted/50 border-border"
               onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
             />
-            <Button onClick={addSpecialty} variant="outline" className="border-white/10">
+            <Button onClick={addSpecialty} variant="outline" className="border-border">
               <Plus className="w-4 h-4" />
             </Button>
           </div>

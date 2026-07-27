@@ -58,7 +58,7 @@ export default function RegisterPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#07070b] text-white flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-8 items-center">
         {/* Lado izquierdo: beneficios */}
         <div className="hidden lg:block space-y-6 pr-8">
@@ -76,7 +76,7 @@ export default function RegisterPage() {
             </span>
           </h1>
 
-          <p className="text-white/60 text-lg">
+          <p className="text-muted-foreground text-lg">
             El sistema de gestión de citas médicas más completo del Perú.
             Multi-médico, multi-sucursal, con recordatorios automáticos por
             WhatsApp y caja integrada.
@@ -84,19 +84,19 @@ export default function RegisterPage() {
 
           <ul className="space-y-3">
             {features.map(f => (
-              <li key={f} className="flex items-center gap-3 text-white/80">
+              <li key={f} className="flex items-center gap-3 text-foreground/80">
                 <CheckCircle2 className="w-5 h-5 text-[#0ea5e9]" />
                 {f}
               </li>
             ))}
           </ul>
 
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-            <p className="text-sm text-white/60 mb-1">Plan Free para siempre</p>
+          <div className="bg-muted/50 border border-border rounded-2xl p-4">
+            <p className="text-sm text-muted-foreground mb-1">Plan Free para siempre</p>
             <p className="text-2xl font-bold">
-              S/ 0<span className="text-white/40 text-base font-normal">/mes</span>
+              S/ 0<span className="text-muted-foreground/70 text-base font-normal">/mes</span>
             </p>
-            <p className="text-xs text-white/40 mt-1">
+            <p className="text-xs text-muted-foreground/70 mt-1">
               1 médico · 50 pacientes · 100 citas al mes
             </p>
           </div>
@@ -115,7 +115,7 @@ export default function RegisterPage() {
 
           <form
             onSubmit={onSubmit}
-            className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4"
+            className="bg-muted/50 border border-border rounded-2xl p-6 space-y-4"
           >
             <h2 className="text-xl font-bold">Crear cuenta gratis</h2>
 
@@ -134,7 +134,7 @@ export default function RegisterPage() {
                 value={form.fullName}
                 onChange={e => setForm({ ...form, fullName: e.target.value })}
                 placeholder="Dr. Juan Pérez"
-                className="bg-white/5 border-white/10"
+                className="bg-muted/50 border-border"
               />
             </div>
 
@@ -146,7 +146,7 @@ export default function RegisterPage() {
                 value={form.clinicName}
                 onChange={e => setForm({ ...form, clinicName: e.target.value })}
                 placeholder="Clínica San Juan"
-                className="bg-white/5 border-white/10"
+                className="bg-muted/50 border-border"
               />
             </div>
 
@@ -159,7 +159,7 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 placeholder="doctor@clinica.com"
-                className="bg-white/5 border-white/10"
+                className="bg-muted/50 border-border"
               />
             </div>
 
@@ -170,7 +170,7 @@ export default function RegisterPage() {
                 value={form.phone}
                 onChange={e => setForm({ ...form, phone: e.target.value })}
                 placeholder="+51 999 888 777"
-                className="bg-white/5 border-white/10"
+                className="bg-muted/50 border-border"
               />
             </div>
 
@@ -184,7 +184,7 @@ export default function RegisterPage() {
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 placeholder="Mínimo 6 caracteres"
-                className="bg-white/5 border-white/10"
+                className="bg-muted/50 border-border"
               />
             </div>
 
@@ -199,7 +199,7 @@ export default function RegisterPage() {
               Crear cuenta gratis
             </Button>
 
-            <p className="text-center text-sm text-white/60">
+            <p className="text-center text-sm text-muted-foreground">
               ¿Ya tienes cuenta?{' '}
               <Link href="/login" className="text-[#0ea5e9] hover:underline">
                 Inicia sesión

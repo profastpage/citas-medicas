@@ -65,7 +65,7 @@ export function CajaClient(props: Props) {
               <Lock className="w-8 h-8 text-amber-400" />
             </div>
             <h2 className="text-2xl font-bold">Caja y pagos es una función Pro</h2>
-            <p className="text-white/60">
+            <p className="text-muted-foreground">
               Gestiona cobros, apertura/cierre de caja, gastos del día y reportes de ingresos.
               Disponible desde el plan Pro (S/ 50/mes).
             </p>
@@ -114,7 +114,7 @@ export function CajaClient(props: Props) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold">Caja</h1>
-            <p className="text-white/60 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               Gestión de cobros y sesión de caja
             </p>
           </div>
@@ -126,18 +126,18 @@ export function CajaClient(props: Props) {
                   Abrir caja
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md bg-[#0a0a14] border-white/10">
+              <DialogContent className="max-w-md bg-sidebar border-border">
                 <DialogHeader>
                   <DialogTitle>Abrir caja</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
                   <div>
                     <Label>Monto de apertura (S/)</Label>
-                    <Input type="number" value={openingAmount} onChange={e => setOpeningAmount(e.target.value)} className="bg-white/5 border-white/10" />
+                    <Input type="number" value={openingAmount} onChange={e => setOpeningAmount(e.target.value)} className="bg-muted/50 border-border" />
                   </div>
                   <div>
                     <Label>Notas</Label>
-                    <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="bg-white/5 border-white/10" />
+                    <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="bg-muted/50 border-border" />
                   </div>
                   <Button onClick={openSession} disabled={submitting} className="w-full bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]">
                     {submitting ? 'Abriendo...' : 'Abrir caja'}
@@ -150,32 +150,32 @@ export function CajaClient(props: Props) {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+          <div className="bg-muted/50 border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-white/40">Ingresos hoy</span>
+              <span className="text-xs text-muted-foreground/70">Ingresos hoy</span>
               <TrendingUp className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-2xl font-bold text-emerald-400">S/ {totalToday.toFixed(2)}</div>
           </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+          <div className="bg-muted/50 border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-white/40">Gastos hoy</span>
+              <span className="text-xs text-muted-foreground/70">Gastos hoy</span>
               <TrendingDown className="w-4 h-4 text-red-400" />
             </div>
             <div className="text-2xl font-bold text-red-400">S/ {totalExpensesToday.toFixed(2)}</div>
           </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+          <div className="bg-muted/50 border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-white/40">Saldo</span>
+              <span className="text-xs text-muted-foreground/70">Saldo</span>
               <DollarSign className="w-4 h-4 text-[#d4af37]" />
             </div>
             <div className="text-2xl font-bold text-[#d4af37]">
               S/ {(totalToday - totalExpensesToday + (activeSession?.openingAmount ?? 0)).toFixed(2)}
             </div>
           </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+          <div className="bg-muted/50 border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-white/40">Cobros hoy</span>
+              <span className="text-xs text-muted-foreground/70">Cobros hoy</span>
               <DollarSign className="w-4 h-4 text-[#0ea5e9]" />
             </div>
             <div className="text-2xl font-bold">{paymentsToday.length}</div>
@@ -188,10 +188,10 @@ export function CajaClient(props: Props) {
             <div className="flex items-center justify-between">
               <div>
                 <Badge className="bg-emerald-500 text-white">CAJA ABIERTA</Badge>
-                <div className="text-sm text-white/60 mt-2">
+                <div className="text-sm text-muted-foreground mt-2">
                   Abierta: {format(new Date(activeSession.openedAt), "dd/MM/yyyy HH:mm", { locale: es })}
                 </div>
-                <div className="text-xs text-white/40 mt-1">
+                <div className="text-xs text-muted-foreground/70 mt-1">
                   Monto apertura: S/ {activeSession.openingAmount.toFixed(2)}
                 </div>
               </div>
@@ -200,17 +200,17 @@ export function CajaClient(props: Props) {
         )}
 
         {/* Cobros de hoy */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+        <div className="bg-muted/50 border border-border rounded-2xl p-4">
           <h2 className="font-bold mb-3">Cobros de hoy</h2>
           {paymentsToday.length === 0 ? (
-            <p className="text-sm text-white/40 py-6 text-center">Sin cobros registrados hoy</p>
+            <p className="text-sm text-muted-foreground/70 py-6 text-center">Sin cobros registrados hoy</p>
           ) : (
             <div className="space-y-2 max-h-80 overflow-y-auto">
               {paymentsToday.map(p => (
-                <div key={p.id} className="flex items-center justify-between p-2 rounded bg-white/[0.02]">
+                <div key={p.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
                   <div>
                     <div className="text-sm">{p.patientName}</div>
-                    <div className="text-xs text-white/40">
+                    <div className="text-xs text-muted-foreground/70">
                       {format(new Date(p.paymentDate), 'HH:mm', { locale: es })} · {p.method}
                     </div>
                   </div>
@@ -222,19 +222,19 @@ export function CajaClient(props: Props) {
         </div>
 
         {/* Historial de sesiones */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+        <div className="bg-muted/50 border border-border rounded-2xl p-4">
           <h2 className="font-bold mb-3">Historial de sesiones</h2>
           {sessions.length === 0 ? (
-            <p className="text-sm text-white/40 py-6 text-center">Sin sesiones previas</p>
+            <p className="text-sm text-muted-foreground/70 py-6 text-center">Sin sesiones previas</p>
           ) : (
             <div className="space-y-2 max-h-80 overflow-y-auto">
               {sessions.map(s => (
-                <div key={s.id} className="flex items-center justify-between p-2 rounded bg-white/[0.02]">
+                <div key={s.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
                   <div>
                     <div className="text-sm">
                       {format(new Date(s.openedAt), 'dd/MM/yyyy HH:mm', { locale: es })}
                     </div>
-                    <div className="text-xs text-white/40">
+                    <div className="text-xs text-muted-foreground/70">
                       Apertura: S/ {s.openingAmount.toFixed(2)}
                       {s.closingAmount && ` · Cierre: S/ ${s.closingAmount.toFixed(2)}`}
                     </div>
@@ -243,7 +243,7 @@ export function CajaClient(props: Props) {
                     variant="outline"
                     className={s.status === 'abierta'
                       ? 'border-emerald-500/30 text-emerald-300'
-                      : 'border-white/20 text-white/60'
+                      : 'border-border text-muted-foreground'
                     }
                   >
                     {s.status}

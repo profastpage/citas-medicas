@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { Plan } from '@/lib/plans';
 import { isPlanAtLeast, type PlanId } from '@/lib/plans';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface NavItem {
   href: string;
@@ -89,11 +90,11 @@ export function DashboardShell({
       ? 'flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px]'
       : 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors';
     const activeCls = mobile
-      ? 'bg-white/5 text-white font-medium'
-      : 'bg-white/5 border border-white/10 text-white font-medium';
+      ? 'bg-muted/50 text-white font-medium'
+      : 'bg-muted/50 border border-border text-white font-medium';
     const idleCls = mobile
-      ? 'text-white/50 hover:bg-white/5'
-      : 'text-white/60 hover:text-white hover:bg-white/5';
+      ? 'text-muted-foreground/80 hover:bg-muted/60'
+      : 'text-muted-foreground hover:text-foreground hover:bg-muted/60';
 
     let locked = false;
     let lockReason = '';
@@ -150,12 +151,12 @@ export function DashboardShell({
   };
 
   const renderUserBlock = () => (
-    <div className="border-t border-white/10 pt-4 space-y-3">
+    <div className="border-t border-border pt-4 space-y-3">
       <div className="px-3 space-y-1">
-        <div className="text-sm text-white/80 truncate">{user.email}</div>
+        <div className="text-sm text-foreground/80 truncate">{user.email}</div>
         <span
           className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
-            plan.id === 'free' ? 'bg-white/5 text-white/60' : ''
+            plan.id === 'free' ? 'bg-muted/50 text-muted-foreground' : ''
           }`}
           style={
             plan.id !== 'free'
@@ -174,7 +175,7 @@ export function DashboardShell({
         variant="ghost"
         size="sm"
         onClick={handleLogout}
-        className="w-full justify-start text-white/60 hover:text-white hover:bg-white/5"
+        className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/60"
       >
         <LogOut className="w-4 h-4 mr-2" />
         Cerrar sesión
@@ -183,9 +184,9 @@ export function DashboardShell({
   );
 
   return (
-    <div className="min-h-screen bg-[#07070b] text-white flex">
+    <div className="min-h-screen bg-background text-foreground flex">
       {/* Sidebar desktop */}
-      <aside className="hidden lg:flex flex-col w-60 border-r border-white/10 bg-[#0a0a14] p-4 flex-shrink-0">
+      <aside className="hidden lg:flex flex-col w-60 border-r border-border bg-sidebar p-4 flex-shrink-0">
         <div className="flex items-center gap-3 mb-8 px-2">
           <Link href="/" className="hover:opacity-90 transition">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0ea5e9] to-[#2563eb] flex items-center justify-center font-bold text-white">
@@ -197,7 +198,7 @@ export function DashboardShell({
           </Link>
         </div>
 
-        <div className="px-2 mb-4 text-xs text-white/40 truncate">
+        <div className="px-2 mb-4 text-xs text-muted-foreground/70 truncate">
           🏥 {clinicName}
         </div>
 
@@ -216,7 +217,7 @@ export function DashboardShell({
             className="absolute inset-0 bg-black/70"
             onClick={() => setDrawerOpen(false)}
           />
-          <aside className="relative w-64 bg-[#0a0a14] p-4 flex flex-col">
+          <aside className="relative w-64 bg-sidebar p-4 flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <Link href="/" className="font-bold">
                 CitasPro
@@ -225,12 +226,12 @@ export function DashboardShell({
                 variant="ghost"
                 size="sm"
                 onClick={() => setDrawerOpen(false)}
-                className="text-white/60"
+                className="text-muted-foreground"
               >
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <div className="px-2 mb-4 text-xs text-white/40 truncate">
+            <div className="px-2 mb-4 text-xs text-muted-foreground/70 truncate">
               🏥 {clinicName}
             </div>
             <nav className="flex-1 space-y-1 overflow-y-auto">
@@ -244,19 +245,27 @@ export function DashboardShell({
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#0a0a14]">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setDrawerOpen(true)}
-            className="text-white"
+            className="text-foreground"
           >
             <MenuIcon className="w-5 h-5" />
           </Button>
           <span className="font-bold">CitasPro</span>
-          <Link href="/dashboard/billing">
-            <Crown className="w-5 h-5 text-[#d4af37]" />
-          </Link>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Link href="/dashboard/billing" className="ml-1">
+              <Crown className="w-5 h-5 text-[#d4af37]" />
+            </Link>
+          </div>
+        </header>
+
+        {/* Desktop top bar — minimal, contains theme toggle */}
+        <header className="hidden lg:flex items-center justify-end px-6 py-2 border-b border-border bg-background/60 backdrop-blur-sm">
+          <ThemeToggle />
         </header>
 
         <main className="flex-1 overflow-x-hidden">{children}</main>

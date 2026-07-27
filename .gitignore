@@ -52,3 +52,15 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Local SQLite database (per-environment)
+/db/
+
+# Agent session artifacts (not part of SaaS codebase)
+worklog.md
+/tool-results/
+/upload/
+/analysis/
+/examples/
+/mini-services/
+.zscripts/

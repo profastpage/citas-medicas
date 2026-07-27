@@ -79,7 +79,7 @@ export function ServiciosClient(props: Props) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold">Servicios</h1>
-            <p className="text-white/60 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               {services.length} servicios médicos con precios
             </p>
           </div>
@@ -90,27 +90,27 @@ export function ServiciosClient(props: Props) {
                 Nuevo servicio
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md bg-[#0a0a14] border-white/10">
+            <DialogContent className="max-w-md bg-sidebar border-border">
               <DialogHeader>
                 <DialogTitle>Nuevo servicio</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div>
                   <Label>Nombre *</Label>
-                  <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-white/5 border-white/10" placeholder="Consulta médica general" />
+                  <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-muted/50 border-border" placeholder="Consulta médica general" />
                 </div>
                 <div>
                   <Label>Descripción</Label>
-                  <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="bg-white/5 border-white/10" />
+                  <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="bg-muted/50 border-border" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Precio (S/) *</Label>
-                    <Input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                   <div>
                     <Label>Duración (min)</Label>
-                    <Input type="number" value={form.durationMin} onChange={e => setForm({ ...form, durationMin: e.target.value })} className="bg-white/5 border-white/10" />
+                    <Input type="number" value={form.durationMin} onChange={e => setForm({ ...form, durationMin: e.target.value })} className="bg-muted/50 border-border" />
                   </div>
                 </div>
                 <Button onClick={submit} disabled={submitting} className="w-full bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]">
@@ -123,13 +123,13 @@ export function ServiciosClient(props: Props) {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {services.length === 0 ? (
-            <div className="col-span-full py-16 text-center text-white/40 bg-white/[0.03] border border-white/10 rounded-2xl">
+            <div className="col-span-full py-16 text-center text-muted-foreground/70 bg-muted/50 border border-border rounded-2xl">
               <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No hay servicios registrados</p>
             </div>
           ) : (
             services.map(s => (
-              <div key={s.id} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
+              <div key={s.id} className="bg-muted/50 border border-border rounded-2xl p-5">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-bold">{s.name}</h3>
                   <Badge variant="outline" className="text-[#d4af37] border-[#d4af37]/30">
@@ -137,9 +137,9 @@ export function ServiciosClient(props: Props) {
                   </Badge>
                 </div>
                 {s.description && (
-                  <p className="text-sm text-white/60 mb-3 line-clamp-2">{s.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{s.description}</p>
                 )}
-                <div className="flex items-center gap-2 text-xs text-white/40">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
                   <Clock className="w-3 h-3" />
                   {s.durationMin} minutos
                 </div>
