@@ -349,9 +349,13 @@ END $$;
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION fn_handle_new_auth_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
-  INSERT INTO "User" (supabase_uid, email, full_name)
+  INSERT INTO public."User" (supabase_uid, email, full_name)
   VALUES (
     NEW.id,
     NEW.email,
@@ -360,7 +364,7 @@ BEGIN
   ON CONFLICT (supabase_uid) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS trg_on_auth_user_created ON auth.users;
 CREATE TRIGGER trg_on_auth_user_created
