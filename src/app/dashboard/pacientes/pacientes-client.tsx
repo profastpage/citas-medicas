@@ -14,6 +14,7 @@ import { Users, Plus, Search, Phone, Mail, Calendar, Droplet, AlertTriangle, Fil
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { PlanUsageBadge, PlanLimitBanner } from '@/components/dashboard/plan-usage-badge';
 
 interface Patient {
   id: string;
@@ -127,13 +128,17 @@ export function PacientesClient(props: Props) {
 
   return (
     <DashboardShell user={user} plan={plan} clinicName={clinicName} isSuperAdmin={isSuperAdmin}>
-      <div className="p-6 lg:p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Banner de límite (solo aparece si está al límite) */}
+        <PlanLimitBanner resource="patients" label="Pacientes" />
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="space-y-1.5">
             <h1 className="text-2xl lg:text-3xl font-bold">Pacientes</h1>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-muted-foreground text-sm">
               {patients.length} pacientes registrados
             </p>
+            <PlanUsageBadge resource="patients" label="Pacientes" />
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>

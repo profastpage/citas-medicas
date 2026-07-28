@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Building2, Save, Plus, Trash2, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { PlanUsageBadge } from '@/components/dashboard/plan-usage-badge';
 
 interface Props {
   user: { email: string; name: string };
@@ -81,12 +82,13 @@ export function ClinicaClient(props: Props) {
 
   return (
     <DashboardShell user={user} plan={plan} clinicName={clinic.name} isSuperAdmin={isSuperAdmin}>
-      <div className="p-6 lg:p-8 space-y-6">
-        <div>
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="space-y-1.5">
           <h1 className="text-2xl lg:text-3xl font-bold">Configuración de la clínica</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-sm">
             Datos generales, branding y especialidades
           </p>
+          <PlanUsageBadge resource="clinics" label="Sucursales" />
         </div>
 
         {/* Datos generales */}

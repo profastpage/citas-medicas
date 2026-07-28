@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Stethoscope, Plus, Phone, Mail, Award, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { PlanUsageBadge, PlanLimitBanner } from '@/components/dashboard/plan-usage-badge';
 
 interface Doctor {
   id: string;
@@ -84,13 +85,17 @@ export function MedicosClient(props: Props) {
 
   return (
     <DashboardShell user={user} plan={plan} clinicName={clinicName} isSuperAdmin={isSuperAdmin}>
-      <div className="p-6 lg:p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Banner de límite */}
+        <PlanLimitBanner resource="doctors" label="Médicos" />
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="space-y-1.5">
             <h1 className="text-2xl lg:text-3xl font-bold">Médicos</h1>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-muted-foreground text-sm">
               {doctors.length} profesionales · {specialties.length} especialidades
             </p>
+            <PlanUsageBadge resource="doctors" label="Médicos" />
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>

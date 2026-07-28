@@ -2,12 +2,14 @@
 // CitasPro SaaS — Planes de suscripción
 // Adaptado del modelo de MenuPro pero con límites del dominio médico
 // ============================================================
-// FILOSOFÍA DE LÍMITES (v2 — 2026-07-28):
+// FILOSOFÍA DE LÍMITES (v3 — 2026-07-29):
 //   Free    = prueba literal. 5 citas/mes, 5 pacientes. 1 médico. 1 usuario.
 //              Quiere usar más? Pagar. Sin caja, sin inventario, sin WhatsApp.
-//   Pro     = consultorio en crecimiento. 20 citas/mes. 3 médicos. Caja + inventario.
-//   Premium = clínica seria. 50 citas/mes. 10 médicos. Multi-sucursal + white label.
+//   Pro     = consultorio en crecimiento. 20 citas/mes, 30 pacientes. 3 médicos. Caja + inventario.
+//   Premium = clínica seria. 50 citas/mes, 100 pacientes. 10 médicos. Multi-sucursal + white label.
 //   Full    = ilimitado. Para redes de clínicas.
+// Escalado de pacientes obliga upgrades reales:
+//   Free 5 → Pro 30 → Premium 100 → Full ∞
 // Los límites se ENFUERZAN en:
 //   - src/app/api/appointments/route.ts (POST crea cita → check maxAppointmentsPerMonth)
 //   - src/app/api/patients/route.ts     (POST crea paciente → check maxPatients)
@@ -111,10 +113,10 @@ export const PLANS: Record<PlanId, Plan> = {
     badge: 'POPULAR',
     highlight: true,
     upgradeHint:
-      '20 citas/mes. Pasa a Premium (S/ 99/mes) para 50 citas, multi-sucursal y white label.',
+      '30 pacientes y 20 citas/mes. Pasa a Premium (S/ 99/mes) para 100 pacientes, 50 citas, multi-sucursal y white label.',
     limits: {
       maxDoctors: 3,
-      maxPatients: -1,
+      maxPatients: 30,
       maxAppointmentsPerMonth: 20,
       maxClinics: 1,
       maxUsers: 3,
@@ -139,7 +141,7 @@ export const PLANS: Record<PlanId, Plan> = {
     features: [
       'Todo lo de Free',
       '3 médicos',
-      'Pacientes ilimitados',
+      'Hasta 30 pacientes',
       'Hasta 20 citas al mes',
       'Gestión de caja y pagos',
       'Inventario de medicamentos',
@@ -161,10 +163,10 @@ export const PLANS: Record<PlanId, Plan> = {
     color: '#9d4edd',
     badge: 'PREMIUM',
     upgradeHint:
-      '50 citas/mes. Pasa a Full (S/ 199/mes) para citas y usuarios ilimitados + API.',
+      '100 pacientes y 50 citas/mes. Pasa a Full (S/ 199/mes) para todo ilimitado + API.',
     limits: {
       maxDoctors: 10,
-      maxPatients: -1,
+      maxPatients: 100,
       maxAppointmentsPerMonth: 50,
       maxClinics: 3,
       maxUsers: 10,
@@ -189,6 +191,7 @@ export const PLANS: Record<PlanId, Plan> = {
     features: [
       'Todo lo de Pro',
       '10 médicos',
+      'Hasta 100 pacientes',
       'Hasta 50 citas al mes',
       'Multi-sucursal (3 clínicas)',
       'White label — sin marca CitasPro',
@@ -273,7 +276,7 @@ export const LIMIT_COMPARISON: Array<{
   values: [string, string, string, string];
 }> = [
   { label: 'Citas por mes', icon: '📅', values: ['5', '20', '50', '∞'] },
-  { label: 'Pacientes', icon: '🧑‍🤝‍🧑', values: ['5', '∞', '∞', '∞'] },
+  { label: 'Pacientes', icon: '🧑‍🤝‍🧑', values: ['5', '30', '100', '∞'] },
   { label: 'Médicos', icon: '👨‍⚕️', values: ['1', '3', '10', '∞'] },
   { label: 'Sucursales', icon: '🏬', values: ['1', '1', '3', '∞'] },
   { label: 'Usuarios', icon: '👥', values: ['1', '3', '10', '∞'] },

@@ -14,6 +14,7 @@ import { Calendar, Plus, Search, Clock, User, Stethoscope, ChevronLeft, ChevronR
 import { toast } from 'sonner';
 import { addDays, format, isSameDay, startOfDay, addMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { PlanUsageBadge, PlanLimitBanner } from '@/components/dashboard/plan-usage-badge';
 
 interface Props {
   user: { email: string; name: string };
@@ -160,14 +161,18 @@ export function CitasClient(props: Props) {
 
   return (
     <DashboardShell user={user} plan={plan} clinicName={clinicName} isSuperAdmin={isSuperAdmin}>
-      <div className="p-6 lg:p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Banner de límite */}
+        <PlanLimitBanner resource="appointments" label="Citas este mes" />
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="space-y-1.5">
             <h1 className="text-2xl lg:text-3xl font-bold">Citas</h1>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-muted-foreground text-sm">
               Gestiona el calendario de tu clínica
             </p>
+            <PlanUsageBadge resource="appointments" label="Citas este mes" />
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>

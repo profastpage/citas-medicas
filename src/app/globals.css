@@ -155,5 +155,56 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Avoid horizontal scroll on mobile when sheet/menu opens */
+    overflow-x: hidden;
+  }
+  /* Mejor tap target en mobile */
+  @media (max-width: 1024px) {
+    button, a {
+      touch-action: manipulation;
+    }
+  }
+}
+
+/* ============================================================
+   Animaciones utilitarias
+   ============================================================ */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-up {
+  animation: slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* Esconder scrollbar en bottom nav pero permitir scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area para iOS notch + bottom nav */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }

@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
+import { PlanUsageBadge } from '@/components/dashboard/plan-usage-badge';
 
 interface Props {
   user: { email: string; name: string };
@@ -71,8 +72,17 @@ export function DashboardClient({
             Hola, {user.name.split(' ')[0]} 👋
           </h1>
           <p className="text-muted-foreground text-xs sm:text-sm mt-1">
-            Resumen de {clinicName} · {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
+            Dashboard de {clinicName} · {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
+        </div>
+
+        {/* Plan usage summary — muestra límites por plan automáticamente */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
+          <PlanUsageBadge resource="appointments" label="Citas / mes" />
+          <PlanUsageBadge resource="patients" label="Pacientes" />
+          <PlanUsageBadge resource="doctors" label="Médicos" />
+          <PlanUsageBadge resource="team" label="Equipo" />
+          <PlanUsageBadge resource="clinics" label="Sucursales" />
         </div>
 
         {/* Stats grid */}

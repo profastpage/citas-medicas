@@ -26,6 +26,8 @@ import {
 import type { Plan } from '@/lib/plans';
 import { isPlanAtLeast, type PlanId } from '@/lib/plans';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BottomNav } from '@/components/dashboard/bottom-nav';
+import { PlanUsageBadge } from '@/components/dashboard/plan-usage-badge';
 
 interface NavItem {
   href: string;
@@ -38,7 +40,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/dashboard', label: 'Resumen', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/citas', label: 'Citas', icon: Calendar },
   { href: '/dashboard/pacientes', label: 'Pacientes', icon: Users },
   { href: '/dashboard/medicos', label: 'Médicos', icon: Stethoscope },
@@ -204,6 +206,11 @@ export function DashboardShell({
           🏥 {clinicName}
         </div>
 
+        {/* Usage mini-badge en sidebar desktop */}
+        <div className="px-2 mb-4 space-y-1.5">
+          <PlanUsageBadge resource="appointments" label="Citas / mes" variant="compact" />
+        </div>
+
         <nav className="flex-1 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map(item => renderItem(item))}
           {renderSuperAdminLink()}
@@ -212,7 +219,7 @@ export function DashboardShell({
         {renderUserBlock()}
       </aside>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — legacy, kept as fallback if BottomNav fails */}
       {drawerOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div
@@ -248,18 +255,15 @@ export function DashboardShell({
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDrawerOpen(true)}
-            className="text-foreground"
-          >
-            <MenuIcon className="w-5 h-5" />
-          </Button>
-          <span className="font-bold">CitasPro</span>
+          <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition">
+            <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#0ea5e9] to-[#2563eb] flex items-center justify-center font-bold text-white text-xs">
+              C
+            </div>
+            <span className="font-bold text-sm">CitasPro</span>
+          </Link>
           <div className="flex items-center gap-1">
             <ThemeToggle />
-            <Link href="/dashboard/billing" className="ml-1">
+            <Link href="/dashboard/billing" className="ml-1" aria-label="Mejorar plan">
               <Crown className="w-5 h-5 text-[#d4af37]" />
             </Link>
           </div>
@@ -270,8 +274,12 @@ export function DashboardShell({
           <ThemeToggle />
         </header>
 
-        <main className="flex-1 overflow-x-hidden">{children}</main>
+        {/* Padding bottom en mobile para que el bottom nav no tape contenido */}
+        <main className="flex-1 overflow-x-hidden pb-20 lg:pb-0">{children}</main>
       </div>
+
+      {/* Bottom nav mobile */}
+      <BottomNav plan={plan} isSuperAdmin={isSuperAdmin} userEmail={user.email} />
     </div>
   );
 }

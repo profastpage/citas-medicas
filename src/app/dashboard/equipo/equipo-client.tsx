@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { PlanUsageBadge } from '@/components/dashboard/plan-usage-badge';
 
 interface Member {
   id: string;
@@ -63,12 +64,13 @@ export function EquipoClient(props: Props) {
 
   return (
     <DashboardShell user={user} plan={plan} clinicName={clinicName} isSuperAdmin={isSuperAdmin}>
-      <div className="p-6 lg:p-8 space-y-6">
-        <div>
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="space-y-1.5">
           <h1 className="text-2xl lg:text-3xl font-bold">Equipo</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-sm">
             {members.length} miembros en la clínica
           </p>
+          <PlanUsageBadge resource="team" label="Usuarios del equipo" />
         </div>
 
         <div className="bg-muted/50 border border-border rounded-2xl overflow-hidden">
