@@ -67,18 +67,18 @@ export default function Home() {
 
             <div className="flex items-center gap-6 pt-4">
               <div>
-                <div className="text-2xl font-bold">S/ 0</div>
-                <div className="text-xs text-muted-foreground/70">Plan Free para siempre</div>
+                <div className="text-2xl font-bold text-foreground">S/ 0</div>
+                <div className="text-xs text-muted-foreground">Plan Free para siempre</div>
               </div>
-              <div className="w-px h-10 bg-muted" />
+              <div className="w-px h-10 bg-border" />
               <div>
-                <div className="text-2xl font-bold">5 min</div>
-                <div className="text-xs text-muted-foreground/70">Para configurar</div>
+                <div className="text-2xl font-bold text-foreground">5 min</div>
+                <div className="text-xs text-muted-foreground">Para configurar</div>
               </div>
-              <div className="w-px h-10 bg-muted" />
+              <div className="w-px h-10 bg-border" />
               <div>
-                <div className="text-2xl font-bold">0%</div>
-                <div className="text-xs text-muted-foreground/70">Comisión por cita</div>
+                <div className="text-2xl font-bold text-foreground">0%</div>
+                <div className="text-xs text-muted-foreground">Comisión por cita</div>
               </div>
             </div>
           </div>
@@ -86,34 +86,34 @@ export default function Home() {
           {/* Mockup */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-[#0ea5e9]/20 to-[#2563eb]/20 blur-3xl" />
-            <div className="relative bg-sidebar border border-border rounded-2xl p-6 space-y-4">
+            <div className="relative bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-400" />
                   <div className="w-3 h-3 rounded-full bg-yellow-400" />
                   <div className="w-3 h-3 rounded-full bg-green-400" />
                 </div>
-                <div className="text-xs text-muted-foreground/70">citaspro.pe/dashboard</div>
+                <div className="text-xs text-muted-foreground">citaspro.pe/dashboard</div>
               </div>
 
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground/70">Citas hoy</div>
+                  <div className="bg-muted/60 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground">Citas hoy</div>
                     <div className="text-2xl font-bold text-[#0ea5e9]">12</div>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground/70">Pacientes</div>
-                    <div className="text-2xl font-bold text-emerald-400">348</div>
+                  <div className="bg-muted/60 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground">Pacientes</div>
+                    <div className="text-2xl font-bold text-emerald-500">348</div>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground/70">Ingresos</div>
+                  <div className="bg-muted/60 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground">Ingresos</div>
                     <div className="text-2xl font-bold text-[#d4af37]">S/ 890</div>
                   </div>
                 </div>
 
-                <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                  <div className="text-xs text-muted-foreground/70">Próximas citas</div>
+                <div className="bg-muted/60 rounded-lg p-3 space-y-2">
+                  <div className="text-xs text-muted-foreground">Próximas citas</div>
                   {[
                     { time: '09:00', patient: 'María Quispe', doctor: 'Dr. Pérez' },
                     { time: '09:30', patient: 'Juan Rojas', doctor: 'Dra. García' },
@@ -121,8 +121,8 @@ export default function Home() {
                   ].map((apt, i) => (
                     <div key={i} className="flex items-center gap-3 text-sm">
                       <span className="text-[#0ea5e9] font-mono text-xs">{apt.time}</span>
-                      <span className="flex-1">{apt.patient}</span>
-                      <span className="text-muted-foreground/70 text-xs">{apt.doctor}</span>
+                      <span className="flex-1 text-foreground">{apt.patient}</span>
+                      <span className="text-muted-foreground text-xs">{apt.doctor}</span>
                     </div>
                   ))}
                 </div>
@@ -181,7 +181,7 @@ export default function Home() {
       </section>
 
       {/* Planes */}
-      <section id="planes" className="px-6 py-20 bg-gradient-to-b from-transparent to-[#0a0a14]">
+      <section id="planes" className="px-6 py-20 bg-muted/40 border-y border-border/60">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Planes simples y transparentes</h2>
@@ -202,8 +202,8 @@ export default function Home() {
               >
                 {plan.badge && (
                   <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold"
-                    style={{ background: plan.color, color: '#0a0a14' }}
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm"
+                    style={{ background: plan.color }}
                   >
                     {plan.badge}
                   </div>
@@ -212,18 +212,18 @@ export default function Home() {
                 <h3 className="text-lg font-bold mb-1" style={{ color: plan.color }}>
                   {plan.name}
                 </h3>
-                <p className="text-xs text-muted-foreground/70 mb-4">{plan.tagline}</p>
+                <p className="text-xs text-muted-foreground mb-4">{plan.tagline}</p>
 
                 <div className="mb-6">
-                  <span className="text-4xl font-bold">S/ {plan.priceMonthly}</span>
-                  <span className="text-muted-foreground/70 text-sm">/mes</span>
+                  <span className="text-4xl font-bold text-foreground">S/ {plan.priceMonthly}</span>
+                  <span className="text-muted-foreground text-sm">/mes</span>
                 </div>
 
                 <ul className="space-y-2 text-sm mb-6 min-h-[200px]">
                   {plan.features.slice(0, 8).map((f, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{f}</span>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-foreground/80">{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -234,7 +234,7 @@ export default function Home() {
                     variant={plan.highlight ? 'default' : 'outline'}
                     style={
                       plan.highlight
-                        ? { background: plan.color, color: '#0a0a14' }
+                        ? { background: plan.color, color: '#ffffff' }
                         : undefined
                     }
                   >
@@ -247,25 +247,25 @@ export default function Home() {
 
           {/* Comparativa */}
           <div className="mt-16 overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse bg-card border border-border rounded-xl overflow-hidden">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 text-muted-foreground">Característica</th>
-                  <th className="text-center py-3 px-4 text-muted-foreground">Free</th>
-                  <th className="text-center py-3 px-4 text-muted-foreground">Pro</th>
-                  <th className="text-center py-3 px-4 text-muted-foreground">Premium</th>
-                  <th className="text-center py-3 px-4 text-muted-foreground">Full</th>
+                <tr className="border-b border-border bg-muted/60">
+                  <th className="text-left py-3 px-4 font-medium text-foreground">Característica</th>
+                  <th className="text-center py-3 px-4 font-medium text-foreground">Free</th>
+                  <th className="text-center py-3 px-4 font-medium text-foreground">Pro</th>
+                  <th className="text-center py-3 px-4 font-medium text-foreground">Premium</th>
+                  <th className="text-center py-3 px-4 font-medium text-foreground">Full</th>
                 </tr>
               </thead>
               <tbody>
                 {LIMIT_COMPARISON.map((row, i) => (
-                  <tr key={i} className="border-b border-border/60">
-                    <td className="py-3 px-4">
+                  <tr key={i} className="border-b border-border/50 even:bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <td className="py-3 px-4 text-foreground">
                       <span className="mr-2">{row.icon}</span>
                       {row.label}
                     </td>
                     {row.values.map((v, j) => (
-                      <td key={j} className="text-center py-3 px-4">
+                      <td key={j} className="text-center py-3 px-4 font-medium text-foreground">
                         {v}
                       </td>
                     ))}

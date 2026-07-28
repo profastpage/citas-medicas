@@ -37,15 +37,19 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         setError(data.error || 'Error al registrarse');
+        setLoading(false);
         return;
       }
 
       toast.success('¡Cuenta creada! Redirigiendo...');
-      router.push('/dashboard');
-      router.refresh();
+      // Same pattern as login — replace, then hard fallback so the
+      // navigation lands even if the client router is interrupted.
+      router.replace('/dashboard');
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 300);
     } catch {
       setError('Error de conexión');
-    } finally {
       setLoading(false);
     }
   };

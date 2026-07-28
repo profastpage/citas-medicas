@@ -34,15 +34,22 @@ function LoginForm() {
 
       if (!res.ok) {
         setError(data.error || 'Error al iniciar sesión');
+        setLoading(false);
         return;
       }
 
       toast.success('¡Bienvenido de vuelta!');
-      router.push(next);
-      router.refresh();
+      // IMPORTANT: do not call router.refresh() here — it cancels the
+      // pending client-side navigation by re-rendering the current route.
+      // Use replace() so the back button doesn't take the user back to /login,
+      // and fall back to a hard navigation if the router doesn't kick in.
+      // Leave loading=true so the spinner stays during the redirect.
+      router.replace(next);
+      setTimeout(() => {
+        window.location.href = next;
+      }, 300);
     } catch {
       setError('Error de conexión');
-    } finally {
       setLoading(false);
     }
   };
@@ -67,7 +74,7 @@ function LoginForm() {
           className="bg-muted/50 border border-border rounded-2xl p-6 space-y-4"
         >
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg p-3 flex items-center gap-2">
+            <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg p-3 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
@@ -77,12 +84,14 @@ function LoginForm() {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
+              name="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="doctor@clinica.com"
-              className="bg-muted/50 border-border"
+              className="bg-background border-border"
             />
           </div>
 
@@ -90,12 +99,14 @@ function LoginForm() {
             <Label htmlFor="password">Contraseña</Label>
             <Input
               id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="bg-muted/50 border-border"
+              className="bg-background border-border"
             />
           </div>
 
