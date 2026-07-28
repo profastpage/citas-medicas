@@ -4,28 +4,48 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+// ============================================================
+// CitasPro Button — health/medical theme
+// ============================================================
+// Legibilidad al hacer clic (requisito del usuario):
+//   - default (azul médico): en `active` el fondo se aclara y el
+//     texto pasa a azul oscuro mUY contrastante.
+//   - destructive (rojo): en `active` el fondo se aclara y el
+//     texto pasa a rojo oscuro.
+//   - secondary, outline, ghost: en `active` el texto pasa a
+//     azul médico (color del tema de salud) para feedback claro.
+// ============================================================
+
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
+        // Primary: azul médico (sky-500). En hover se oscurece, en
+        // active (clic) se aclara a azul cielo y texto azul muy oscuro.
         default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+          "bg-sky-500 text-white shadow-sm hover:bg-sky-600 active:bg-sky-100 active:text-sky-900",
+        // Destructive: rojo. En active se aclara y texto rojo oscuro.
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-red-500 text-white shadow-sm hover:bg-red-600 active:bg-red-100 active:text-red-900",
+        // Outline: borde + fondo blanco. En hover bg gris claro.
+        // En active, texto azul médico (legible sobre el gris claro).
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-sky-100 active:text-sky-900 active:border-sky-300",
+        // Secondary: gris claro. En active, texto azul médico.
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:bg-sky-100 active:text-sky-900",
+        // Ghost: transparente. En active, fondo azul claro + texto azul oscuro.
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "text-foreground hover:bg-accent hover:text-accent-foreground active:bg-sky-100 active:text-sky-900",
+        // Link: solo texto azul, subraya en hover.
+        link: "text-sky-600 underline-offset-4 hover:underline active:text-sky-900",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
+        default: "h-10 px-4 py-2 has-[>svg]:px-3",
+        sm: "h-9 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-xs",
+        lg: "h-11 rounded-md px-6 has-[>svg]:px-4 text-base",
+        icon: "size-10",
       },
     },
     defaultVariants: {

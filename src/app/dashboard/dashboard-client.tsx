@@ -38,12 +38,12 @@ interface Props {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pendiente: { label: 'Pendiente', color: 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30' },
-  confirmada: { label: 'Confirmada', color: 'bg-blue-500/10 text-blue-300 border-blue-500/30' },
-  en_atencion: { label: 'En atención', color: 'bg-purple-500/10 text-purple-300 border-purple-500/30' },
-  finalizada: { label: 'Finalizada', color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' },
-  cancelada: { label: 'Cancelada', color: 'bg-red-500/10 text-red-300 border-red-500/30' },
-  no_asistio: { label: 'No asistió', color: 'bg-gray-500/10 text-gray-300 border-gray-500/30' },
+  pendiente: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  confirmada: { label: 'Confirmada', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+  en_atencion: { label: 'En atención', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+  finalizada: { label: 'Finalizada', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  cancelada: { label: 'Cancelada', color: 'bg-red-100 text-red-800 border-red-300' },
+  no_asistio: { label: 'No asistió', color: 'bg-gray-100 text-gray-800 border-gray-300' },
 };
 
 export function DashboardClient({
@@ -64,13 +64,13 @@ export function DashboardClient({
       clinicName={clinicName}
       isSuperAdmin={isSuperAdmin}
     >
-      <div className="p-6 lg:p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
             Hola, {user.name.split(' ')[0]} 👋
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-xs sm:text-sm mt-1">
             Resumen de {clinicName} · {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
@@ -108,24 +108,24 @@ export function DashboardClient({
         </div>
 
         {/* Próximas citas */}
-        <div className="bg-muted/50 border border-border rounded-2xl p-6">
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-bold text-lg">Próximas citas</h2>
-              <p className="text-muted-foreground/70 text-sm">Siguientes 5 citas programadas</p>
+              <h2 className="font-bold text-base sm:text-lg">Próximas citas</h2>
+              <p className="text-muted-foreground/70 text-xs sm:text-sm">Siguientes 5 citas programadas</p>
             </div>
             <Link
               href="/dashboard/citas"
-              className="text-[#0ea5e9] text-sm hover:underline"
+              className="text-[#0ea5e9] text-xs sm:text-sm hover:underline whitespace-nowrap"
             >
               Ver todas →
             </Link>
           </div>
 
           {upcoming.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground/70">
+            <div className="py-8 sm:py-12 text-center text-muted-foreground/70">
               <Calendar className="w-10 h-10 mx-auto mb-3 opacity-50" />
-              <p>No tienes citas programadas</p>
+              <p className="text-sm">No tienes citas programadas</p>
               <Link
                 href="/dashboard/citas"
                 className="text-[#0ea5e9] text-sm hover:underline mt-2 inline-block"
@@ -141,24 +141,24 @@ export function DashboardClient({
                 return (
                   <div
                     key={apt.id}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 border border-border/60 hover:border-border transition"
+                    className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30 border border-border/60 hover:border-border transition"
                   >
-                    <div className="text-center min-w-[60px]">
-                      <div className="text-xs text-muted-foreground/70">
+                    <div className="text-center min-w-[50px] sm:min-w-[60px]">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground/70">
                         {date.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}
                       </div>
-                      <div className="text-lg font-bold text-[#0ea5e9]">
+                      <div className="text-base sm:text-lg font-bold text-[#0ea5e9]">
                         {date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{apt.patientName}</div>
-                      <div className="text-xs text-muted-foreground/70 truncate">
+                      <div className="font-medium text-sm sm:text-base truncate">{apt.patientName}</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground/70 truncate">
                         {apt.doctorName} · {apt.serviceName ?? 'Sin servicio'}
                       </div>
                     </div>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs border ${status.color}`}
+                      className={`px-2 py-1 rounded-full text-[10px] sm:text-xs border whitespace-nowrap ${status.color}`}
                     >
                       {status.label}
                     </span>
@@ -170,7 +170,7 @@ export function DashboardClient({
         </div>
 
         {/* Accesos rápidos */}
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <QuickAccess
             href="/dashboard/citas"
             icon={Calendar}
@@ -212,18 +212,18 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-muted/50 border border-border rounded-2xl p-4">
+    <div className="bg-card border border-border rounded-2xl p-3 sm:p-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted-foreground/70">{label}</span>
+        <span className="text-[10px] sm:text-xs text-muted-foreground/70 truncate">{label}</span>
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ background: `${color}20`, color }}
         >
-          <Icon className="w-4 h-4" />
+          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </div>
       </div>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs text-muted-foreground/70 mt-1">{sublabel}</div>
+      <div className="text-lg sm:text-2xl font-bold">{value}</div>
+      <div className="text-[10px] sm:text-xs text-muted-foreground/70 mt-1 truncate">{sublabel}</div>
     </div>
   );
 }
@@ -244,16 +244,16 @@ function QuickAccess({
   return (
     <Link
       href={href}
-      className="bg-muted/50 border border-border rounded-2xl p-5 flex items-center gap-4 hover:border-border transition"
+      className="bg-card border border-border rounded-2xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-border hover:shadow-sm transition"
     >
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
         style={{ background: `${color}20`, color }}
       >
-        <Icon className="w-6 h-6" />
+        <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
       </div>
-      <div>
-        <div className="font-bold">{title}</div>
+      <div className="min-w-0">
+        <div className="font-bold text-sm sm:text-base">{title}</div>
         <div className="text-xs text-muted-foreground/70">{desc}</div>
       </div>
     </Link>

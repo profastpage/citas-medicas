@@ -89,11 +89,13 @@ export function DashboardShell({
     const base = mobile
       ? 'flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px]'
       : 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors';
+    // Active link: fondo azul médico (sky-500) con texto blanco SIEMPRE legible.
+    // Idle link: gris, hover bg gris claro.
     const activeCls = mobile
-      ? 'bg-muted/50 text-white font-medium'
-      : 'bg-muted/50 border border-border text-white font-medium';
+      ? 'bg-sky-500 text-white font-medium'
+      : 'bg-sky-500 text-white font-medium shadow-sm';
     const idleCls = mobile
-      ? 'text-muted-foreground/80 hover:bg-muted/60'
+      ? 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
       : 'text-muted-foreground hover:text-foreground hover:bg-muted/60';
 
     let locked = false;
@@ -142,7 +144,7 @@ export function DashboardShell({
         href="/superadmin"
         prefetch={true}
         onClick={() => mobile && setDrawerOpen(false)}
-        className={`${base} text-amber-400/90 hover:text-amber-400 hover:bg-amber-400/5 border border-amber-400/20`}
+        className={`${base} text-amber-700 bg-amber-100 hover:bg-amber-200 hover:text-amber-900 border border-amber-300`}
       >
         <Shield className={mobile ? 'w-5 h-5' : 'w-4 h-4'} />
         <span className={mobile ? '' : 'flex-1'}>Super Admin</span>

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Stethoscope, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Stethoscope, Loader2, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function RegisterPage() {
@@ -62,7 +62,19 @@ export default function RegisterPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Back-to-landing bar */}
+      <div className="px-4 sm:px-6 py-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Volver al inicio
+        </Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-4 pb-12">
       <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-8 items-center">
         {/* Lado izquierdo: beneficios */}
         <div className="hidden lg:block space-y-6 pr-8">
@@ -101,7 +113,7 @@ export default function RegisterPage() {
               S/ 0<span className="text-muted-foreground/70 text-base font-normal">/mes</span>
             </p>
             <p className="text-xs text-muted-foreground/70 mt-1">
-              1 médico · 50 pacientes · 100 citas al mes
+              1 médico · 5 pacientes · 5 citas al mes
             </p>
           </div>
         </div>
@@ -119,12 +131,12 @@ export default function RegisterPage() {
 
           <form
             onSubmit={onSubmit}
-            className="bg-muted/50 border border-border rounded-2xl p-6 space-y-4"
+            className="bg-card border border-border rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm"
           >
-            <h2 className="text-xl font-bold">Crear cuenta gratis</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">Crear cuenta gratis</h2>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg p-3 flex items-center gap-2">
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}
               </div>
@@ -138,7 +150,7 @@ export default function RegisterPage() {
                 value={form.fullName}
                 onChange={e => setForm({ ...form, fullName: e.target.value })}
                 placeholder="Dr. Juan Pérez"
-                className="bg-muted/50 border-border"
+                className="bg-background border-border h-11"
               />
             </div>
 
@@ -150,7 +162,7 @@ export default function RegisterPage() {
                 value={form.clinicName}
                 onChange={e => setForm({ ...form, clinicName: e.target.value })}
                 placeholder="Clínica San Juan"
-                className="bg-muted/50 border-border"
+                className="bg-background border-border h-11"
               />
             </div>
 
@@ -159,11 +171,12 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 required
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 placeholder="doctor@clinica.com"
-                className="bg-muted/50 border-border"
+                className="bg-background border-border h-11"
               />
             </div>
 
@@ -174,7 +187,7 @@ export default function RegisterPage() {
                 value={form.phone}
                 onChange={e => setForm({ ...form, phone: e.target.value })}
                 placeholder="+51 999 888 777"
-                className="bg-muted/50 border-border"
+                className="bg-background border-border h-11"
               />
             </div>
 
@@ -183,19 +196,20 @@ export default function RegisterPage() {
               <Input
                 id="password"
                 type="password"
+                autoComplete="new-password"
                 required
                 minLength={6}
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 placeholder="Mínimo 6 caracteres"
-                className="bg-muted/50 border-border"
+                className="bg-background border-border h-11"
               />
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-[#0ea5e9] to-[#2563eb] hover:opacity-90"
+              className="w-full h-11 bg-gradient-to-r from-[#0ea5e9] to-[#2563eb] hover:opacity-90"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -211,6 +225,7 @@ export default function RegisterPage() {
             </p>
           </form>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -7,14 +7,16 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Nav */}
-      <header className="border-b border-border/60 backdrop-blur sticky top-0 z-50 bg-background/80">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-border/60 backdrop-blur sticky top-0 z-50 bg-background/95">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0ea5e9] to-[#2563eb] flex items-center justify-center">
               <Stethoscope className="w-5 h-5 text-white" />
             </div>
             <span className="font-bold text-lg">CitasPro</span>
           </Link>
+
+          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
             <Link href="#features" className="hover:text-foreground">Funcionalidades</Link>
             <Link href="#planes" className="hover:text-foreground">Planes</Link>
@@ -25,19 +27,39 @@ export default function Home() {
               </Button>
             </Link>
           </nav>
+
+          {/* Mobile: only show CTA + register link (hamburger not needed for 2 links) */}
+          <div className="md:hidden flex items-center gap-2">
+            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground px-2">
+              Entrar
+            </Link>
+            <Link href="/register">
+              <Button size="sm" className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]">
+                Gratis
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile secondary nav (sticky anchors) */}
+        <div className="md:hidden border-t border-border/60 bg-background/95">
+          <nav className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-6 text-xs text-muted-foreground">
+            <Link href="#features" className="hover:text-foreground">Funcionalidades</Link>
+            <Link href="#planes" className="hover:text-foreground">Planes</Link>
+          </nav>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="px-6 py-16 md:py-24 max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <section className="px-4 sm:px-6 py-12 sm:py-16 md:py-24 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted/50 border border-border text-xs text-muted-foreground">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Nuevo: recordatorios automáticos por WhatsApp
             </div>
 
-            <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
               El sistema de{' '}
               <span className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb] bg-clip-text text-transparent">
                 citas médicas
@@ -45,40 +67,38 @@ export default function Home() {
               que tu clínica necesita
             </h1>
 
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
               Gestiona citas, pacientes, médicos, caja, inventario e historia
               clínica en un solo lugar. Hecho en Perú para consultorios y
               clínicas peruanas. Sin comisiones por cita.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/register">
+              <Link href="/register" className="w-full sm:w-auto">
                 <Button size="lg" className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb] hover:opacity-90 w-full sm:w-auto">
                   Empezar gratis
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
-              <Link href="#planes">
+              <Link href="#planes" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="border-border hover:bg-muted/60 w-full sm:w-auto">
                   Ver planes
                 </Button>
               </Link>
             </div>
 
-            <div className="flex items-center gap-6 pt-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 max-w-md">
               <div>
-                <div className="text-2xl font-bold text-foreground">S/ 0</div>
-                <div className="text-xs text-muted-foreground">Plan Free para siempre</div>
+                <div className="text-xl sm:text-2xl font-bold text-foreground">S/ 0</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Plan Free para siempre</div>
               </div>
-              <div className="w-px h-10 bg-border" />
-              <div>
-                <div className="text-2xl font-bold text-foreground">5 min</div>
-                <div className="text-xs text-muted-foreground">Para configurar</div>
+              <div className="border-l border-border pl-2 sm:pl-4">
+                <div className="text-xl sm:text-2xl font-bold text-foreground">5 min</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Para configurar</div>
               </div>
-              <div className="w-px h-10 bg-border" />
-              <div>
-                <div className="text-2xl font-bold text-foreground">0%</div>
-                <div className="text-xs text-muted-foreground">Comisión por cita</div>
+              <div className="border-l border-border pl-2 sm:pl-4">
+                <div className="text-xl sm:text-2xl font-bold text-foreground">0%</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Comisión por cita</div>
               </div>
             </div>
           </div>
@@ -133,8 +153,8 @@ export default function Home() {
       </section>
 
       {/* Trust bar */}
-      <section className="border-y border-border/60 py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-muted-foreground/70 text-sm">
+      <section className="border-y border-border/60 py-6 sm:py-8 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-12 gap-y-3 text-muted-foreground/70 text-xs sm:text-sm text-center">
           <span>🏥 Consultorios privados</span>
           <span>👨‍⚕️ Clínicas multidisciplinarias</span>
           <span>🦷 Centros odontológicos</span>
@@ -144,17 +164,17 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section id="features" className="px-6 py-20 max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">
+      <section id="features" className="px-4 sm:px-6 py-16 sm:py-20 max-w-7xl mx-auto">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
             Todo lo que tu clínica necesita
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base sm:text-lg">
             Una sola plataforma para gestionar todo el flujo médico
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[
             { icon: Calendar, title: 'Calendario de citas', desc: 'Vista por día, semana o mes. Arrastra y reasigna. Detección de choques de horario automáticamente.' },
             { icon: Users, title: 'Pacientes', desc: 'Ficha completa: datos demográficos, antecedentes, alergias, historia clínica, archivos adjuntos.' },
@@ -181,16 +201,16 @@ export default function Home() {
       </section>
 
       {/* Planes */}
-      <section id="planes" className="px-6 py-20 bg-muted/40 border-y border-border/60">
+      <section id="planes" className="px-4 sm:px-6 py-16 sm:py-20 bg-muted/40 border-y border-border/60">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Planes simples y transparentes</h2>
-            <p className="text-muted-foreground text-lg">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Planes simples y transparentes</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">
               Empieza gratis. Cambia de plan cuando lo necesites. Sin contratos.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {Object.values(PLANS).map(plan => (
               <div
                 key={plan.id}
@@ -215,7 +235,7 @@ export default function Home() {
                 <p className="text-xs text-muted-foreground mb-4">{plan.tagline}</p>
 
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-foreground">S/ {plan.priceMonthly}</span>
+                  <span className="text-3xl sm:text-4xl font-bold text-foreground">S/ {plan.priceMonthly}</span>
                   <span className="text-muted-foreground text-sm">/mes</span>
                 </div>
 
@@ -278,16 +298,16 @@ export default function Home() {
       </section>
 
       {/* CTA final */}
-      <section className="px-6 py-20">
+      <section className="px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">
             Empieza hoy mismo.
             <br />
             <span className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb] bg-clip-text text-transparent">
               Sin tarjeta de crédito.
             </span>
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base sm:text-lg">
             Únete a las clínicas peruanas que ya gestionan sus citas con CitasPro
           </p>
           <Link href="/register">
@@ -300,7 +320,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/60 px-6 py-8 mt-auto">
+      <footer className="border-t border-border/60 px-4 sm:px-6 py-8 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground/70">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#0ea5e9] to-[#2563eb] flex items-center justify-center">
@@ -309,7 +329,7 @@ export default function Home() {
             <span className="font-bold text-muted-foreground">CitasPro</span>
             <span>· Hecho por FastPagePro</span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center">
             <Link href="/login" className="hover:text-foreground">Iniciar sesión</Link>
             <Link href="/register" className="hover:text-foreground">Registro</Link>
             <span>© 2025 CitasPro</span>
