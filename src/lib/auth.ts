@@ -31,11 +31,68 @@ export async function getCurrentUser() {
   });
 
   if (!user || !user.isActive) return null;
+
+  // ── Downgrade on-demand: si el periodo expiró y está en grace/cancelled → Free ──
+  // Defensa en profundidad además del cron diario. Garantiza que el usuario
+  // vea su plan correcto inmediatamente después de la expiración, sin esperar
+  // al cron. El downgrade es idempotente (no re-audita si ya está en Free).
+  if (
+    user.plan !== 'free' &&
+    user.currentPeriodEnd &&
+    user.currentPeriodEnd < new Date() &&
+    user.mpStatus &&
+    ['grace', 'cancelled', 'expired'].includes(user.mpStatus)
+  ) {
+    try {
+      await db.user.update({
+        where: { id: user.id },
+        data: { plan: 'free', mpStatus: 'expired' },
+      });
+      await db.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'PLAN_DOWNGRADE_LAZY',
+          entity: 'User',
+          entityId: user.id,
+          description: 'Downgrade on-demand: periodo expirado detectado en login.',
+        },
+      });
+      user.plan = 'free';
+      user.mpStatus = 'expired';
+    } catch (err) {
+      console.warn('[getCurrentUser] lazy downgrade failed', err);
+    }
+  }
+
   return user;
 }
 
-/// Obtiene la clínica activa del usuario (la primera propiedad por defecto)
+/// Obtiene la clínica activa del usuario.
+/// 1. Si hay cookie `active_clinic_id` y pertenece al usuario → usarla
+/// 2. Si no, usar la primera clínica del usuario (ordenada por createdAt)
 export async function getActiveClinicId(userId: string): Promise<string | null> {
+  // 1. Intentar leer la cookie de sucursal activa
+  try {
+    const cookieStore = await cookies();
+    const cookieClinicId = cookieStore.get('active_clinic_id')?.value;
+    if (cookieClinicId) {
+      // Validar que esta clínica pertenezca al usuario (owner o miembro)
+      const owned = await db.clinic.findFirst({
+        where: { id: cookieClinicId, ownerId: userId },
+        select: { id: true },
+      });
+      if (owned) return owned.id;
+      const member = await db.clinicMember.findFirst({
+        where: { userId, clinicId: cookieClinicId },
+        select: { clinicId: true },
+      });
+      if (member) return member.clinicId;
+    }
+  } catch {
+    // cookies() puede lanzar si se llama desde un contexto no soportado — ignoramos y seguimos
+  }
+
+  // 2. Fallback: primera clínica del usuario
   const clinic = await db.clinic.findFirst({
     where: { OR: [{ ownerId: userId }, { members: { some: { userId } } }] },
     orderBy: { createdAt: 'asc' },

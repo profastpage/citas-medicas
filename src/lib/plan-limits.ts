@@ -151,6 +151,44 @@ export async function assertCanAddTeamMember(userPlan: string, clinicId: string)
 }
 
 /**
+ * Check if the user's clinic can send one more WhatsApp reminder THIS MONTH.
+ * Returns null if OK, or a NextResponse 402 if the monthly credit limit is hit.
+ * Counts AuditLog entries with action='WHATSAPP_REMINDER_SENT' this month.
+ */
+export async function assertCanSendWhatsAppReminder(userPlan: string, clinicId: string) {
+  const plan = getPlan(userPlan);
+  const limit = plan.limits.reminderCreditsPerMonth;
+  if (limit === -1) return null; // unlimited
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  const current = await db.auditLog.count({
+    where: {
+      clinicId,
+      action: 'WHATSAPP_REMINDER_SENT',
+      createdAt: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+
+  if (current >= limit) {
+    return NextResponse.json(
+      {
+        error: `Límite del plan ${plan.name}: ${limit} recordatorios WhatsApp al mes. Mejora tu plan para enviar más.`,
+        code: 'PLAN_LIMIT_WHATSAPP',
+        limit,
+        current,
+        plan: plan.id,
+        upgradeUrl: '/dashboard/billing',
+      },
+      { status: 402 }
+    );
+  }
+  return null;
+}
+
+/**
  * Check feature flag for current plan.
  * Returns NextResponse 402 if feature is disabled.
  */

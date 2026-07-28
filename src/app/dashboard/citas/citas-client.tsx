@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Search, Clock, User, Stethoscope, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Calendar, Plus, Search, Clock, User, Stethoscope, ChevronLeft, ChevronRight, Filter, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDays, format, isSameDay, startOfDay, addMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -161,6 +161,36 @@ export function CitasClient(props: Props) {
   const nextDay = () => setSelectedDate(d => addDays(d, 1));
   const today = () => setSelectedDate(new Date());
 
+  const sendWhatsApp = async (appointmentId: string, patientName: string) => {
+    if (!plan.limits.hasWhatsAppReminders) {
+      toast.error('Recordatorios WhatsApp disponibles desde el plan Pro', {
+        description: 'Mejora tu plan para enviar recordatorios automáticos por WhatsApp.',
+      });
+      return;
+    }
+    try {
+      const res = await fetch(`/api/appointments/${appointmentId}/send-reminder`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Error al enviar recordatorio');
+        return;
+      }
+      // Abrir wa.me en una pestaña nueva
+      if (data.waLink) {
+        window.open(data.waLink, '_blank', 'noopener,noreferrer');
+      }
+      toast.success(`Recordatorio de WhatsApp preparado para ${patientName}`, {
+        description: data.demo
+          ? 'Abre el link para enviarlo manualmente.'
+          : 'Mensaje enviado automáticamente.',
+      });
+    } catch {
+      toast.error('Error de conexión');
+    }
+  };
+
   return (
     <DashboardShell user={user} plan={plan} clinicName={clinicName} isSuperAdmin={isSuperAdmin}>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -174,7 +204,12 @@ export function CitasClient(props: Props) {
             <p className="text-muted-foreground text-sm">
               Gestiona el calendario de tu clínica
             </p>
-            <PlanUsageBadge resource="appointments" label="Citas este mes" />
+            <div className="flex flex-wrap gap-2 pt-1">
+              <PlanUsageBadge resource="appointments" label="Citas este mes" />
+              {plan.limits.hasWhatsAppReminders && (
+                <PlanUsageBadge resource="whatsapp" label="WhatsApp / mes" />
+              )}
+            </div>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -375,6 +410,16 @@ export function CitasClient(props: Props) {
                                   {a.doctorName} · {a.serviceName ?? 'Sin servicio'}
                                 </div>
                               </div>
+                              {plan.limits.hasWhatsAppReminders && (
+                                <button
+                                  onClick={() => sendWhatsApp(a.id, a.patientName)}
+                                  className="p-1.5 rounded-md hover:bg-emerald-500/10 text-emerald-600 transition flex-shrink-0"
+                                  title="Enviar recordatorio por WhatsApp"
+                                  type="button"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               <Select
                                 value={a.status}
                                 onValueChange={v => changeStatus(a.id, v)}
@@ -438,6 +483,16 @@ export function CitasClient(props: Props) {
                           </div>
                         )}
                       </div>
+                      {plan.limits.hasWhatsAppReminders && (
+                        <button
+                          onClick={() => sendWhatsApp(a.id, a.patientName)}
+                          className="p-2 rounded-md hover:bg-emerald-500/10 text-emerald-600 transition flex-shrink-0"
+                          title="Enviar recordatorio por WhatsApp"
+                          type="button"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
+                      )}
                       <Select
                         value={a.status}
                         onValueChange={v => changeStatus(a.id, v)}

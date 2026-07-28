@@ -2,11 +2,15 @@
 // /api/team/invite — Invitar miembro al equipo
 // ============================================================
 // POST → crea ClinicMember con estado pendiente (acceptedAt=null)
-//        + envía invitación por email vía Supabase Auth admin
+//        + envía invitación por email vía Supabase Auth Admin API
+//          (supabase.auth.admin.inviteUserByEmail)
 // Respeta maxUsers del plan.
+// El email lo envía Supabase gratis (incluido en el free tier de Auth,
+// 4 emails/segundo, 50k MAU). No usa Resend ni ningún servicio externo.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getActiveClinicId } from '@/lib/auth';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
 import { assertCanAddTeamMember } from '@/lib/plan-limits';
@@ -92,8 +96,46 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // TODO: enviar email de invitación real con magic link de Supabase.
-  // Por ahora, devolvemos el miembro creado.
+  // ── Enviar invitación real vía Supabase Auth Admin API ──
+  // supabase.auth.admin.inviteUserByEmail envía un email con un magic link
+  // que lleva al usuario al callback de la app, donde se completa el registro.
+  // Costo: $0 — incluido en el free tier de Supabase Auth.
+  // Requiere SUPABASE_SERVICE_ROLE_KEY. Si no está configurada, la invitación
+  // queda pendiente en DB y el owner puede reenviarla luego.
+  const adminClient = createSupabaseAdminClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  // Codificamos clinicId+role+memberId en la URL redirect para que el callback
+  // pueda aceptar la invitación automáticamente y setear acceptedAt.
+  const redirectUrl = `${siteUrl}/auth/callback?invite_clinic=${encodeURIComponent(clinicId)}&invite_member=${encodeURIComponent(member.id)}&invite_role=${encodeURIComponent(role)}`;
+
+  let inviteResult: { sent: boolean; warning?: string } = { sent: false };
+  if (!adminClient) {
+    inviteResult = {
+      sent: false,
+      warning: 'SUPABASE_SERVICE_ROLE_KEY no configurada. La invitación quedó pendiente en DB; el usuario deberá registrarse manualmente.',
+    };
+  } else {
+    try {
+      const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+        redirectTo: redirectUrl,
+        data: {
+          full_name: fullName,
+          invited_role: role,
+          invited_clinic_id: clinicId,
+          invited_clinic_name: user.ownedClinics.find(c => c.id === clinicId)?.name ?? '',
+        },
+      });
+      if (error) {
+        console.warn('[team invite] supabase admin invite error', error.message);
+        inviteResult = { sent: false, warning: error.message };
+      } else {
+        inviteResult = { sent: true };
+      }
+    } catch (err) {
+      console.warn('[team invite] supabase admin invite threw', err);
+      inviteResult = { sent: false, warning: (err as Error).message };
+    }
+  }
 
   return NextResponse.json(
     {
@@ -106,6 +148,7 @@ export async function POST(req: NextRequest) {
         invitedAt: member.invitedAt.toISOString(),
         acceptedAt: null,
       },
+      invite: inviteResult,
     },
     { status: 201 }
   );
@@ -136,3 +179,4 @@ export async function GET() {
     })),
   });
 }
+

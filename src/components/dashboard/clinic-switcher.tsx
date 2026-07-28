@@ -216,9 +216,23 @@ export function ClinicSwitcher({ clinics, activeClinicId, canCreateMore }: Props
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      // Cambiar sucursal activa: recargar con cookie o query param
-                      toast.info('Para cambiar de sucursal, cierra sesión y vuelve a entrar con la nueva');
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/clinics/activate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ clinicId: c.id }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                          toast.error(data.error || 'Error al cambiar sucursal');
+                          return;
+                        }
+                        toast.success(`Sucursal activa: ${c.name}`);
+                        setTimeout(() => window.location.reload(), 400);
+                      } catch {
+                        toast.error('Error de conexión');
+                      }
                     }}
                     className="text-xs"
                   >

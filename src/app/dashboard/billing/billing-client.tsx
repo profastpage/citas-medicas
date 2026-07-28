@@ -7,6 +7,13 @@ import Link from 'next/link';
 import { PLANS, type Plan, LIMIT_COMPARISON } from '@/lib/plans';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 interface Props {
   user: { email: string; name: string };
@@ -16,16 +23,50 @@ interface Props {
   isSuperAdmin?: boolean;
 }
 
+interface ProrationQuote {
+  currentPlan: { id: string; name: string; price: number };
+  targetPlan: { id: string; name: string; price: number };
+  proration: {
+    amountDue: number;
+    creditRemaining: number;
+    daysRemaining: number;
+    currentPeriodEnd: string | null;
+    explanation: string;
+  };
+}
+
 export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [quote, setQuote] = useState<ProrationQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
-  const upgrade = async (planId: string) => {
-    setLoading(planId);
+  // 1. Solicitar cotización con prorrateo
+  const requestQuote = async (planId: string) => {
+    setQuoteLoading(true);
+    try {
+      const res = await fetch(`/api/billing/quote-upgrade?planId=${planId}`);
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Error al calcular prorrateo');
+        return;
+      }
+      setQuote(data as ProrationQuote);
+    } catch {
+      toast.error('Error de conexión');
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
+  // 2. Confirmar upgrade (procede a checkout con la cotización mostrada)
+  const confirmUpgrade = async () => {
+    if (!quote) return;
+    setLoading(quote.targetPlan.id);
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ planId: quote.targetPlan.id }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -34,11 +75,18 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
       }
       if (data.initPoint) {
         window.location.href = data.initPoint;
+      } else if (data.redirect) {
+        // Modo demo
+        toast.success('Plan activado en modo demo');
+        setTimeout(() => {
+          window.location.href = data.redirect;
+        }, 800);
       }
     } catch {
       toast.error('Error de conexión');
     } finally {
       setLoading(null);
+      setQuote(null);
     }
   };
 
@@ -166,17 +214,17 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
                     </Button>
                   ) : isUpgrade ? (
                     <Button
-                      onClick={() => upgrade(plan.id)}
-                      disabled={loading === plan.id}
+                      onClick={() => requestQuote(plan.id)}
+                      disabled={quoteLoading}
                       className="w-full"
                       style={{ background: plan.color, color: '#0a0a14' }}
                     >
-                      {loading === plan.id ? 'Procesando...' : 'Mejorar'}
+                      {quoteLoading ? 'Calculando...' : 'Mejorar'}
                     </Button>
                   ) : (
                     <Button
-                      onClick={() => upgrade(plan.id)}
-                      disabled={loading === plan.id}
+                      onClick={() => requestQuote(plan.id)}
+                      disabled={quoteLoading}
                       variant="outline"
                       className="w-full border-border"
                     >
@@ -218,6 +266,89 @@ export function BillingClient({ user, currentPlan, mpStatus, currentPeriodEnd }:
           </table>
         </div>
       </div>
+
+      {/* Modal de prorrateo */}
+      <Dialog open={!!quote} onOpenChange={open => !open && setQuote(null)}>
+        <DialogContent className="max-w-md bg-sidebar border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              Mejorar a {quote?.targetPlan.name}
+            </DialogTitle>
+          </DialogHeader>
+          {quote && (
+            <div className="space-y-4">
+              {/* Resumen visual */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Plan actual
+                  </div>
+                  <div className="text-lg font-bold mt-1">{quote.currentPlan.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    S/ {quote.currentPlan.price.toFixed(2)}/mes
+                  </div>
+                </div>
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
+                  <div className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                    Plan nuevo
+                  </div>
+                  <div className="text-lg font-bold mt-1 text-amber-700 dark:text-amber-400">
+                    {quote.targetPlan.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    S/ {quote.targetPlan.price.toFixed(2)}/mes
+                  </div>
+                </div>
+              </div>
+
+              {/* Cargo prorrateado */}
+              <div className="rounded-lg border-2 border-sky-500/40 bg-sky-500/5 p-4 text-center">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Cargo hoy (prorrateado)
+                </div>
+                <div className="text-3xl font-bold text-sky-600 dark:text-sky-400 mt-1">
+                  S/ {quote.proration.amountDue.toFixed(2)}
+                </div>
+                {quote.proration.creditRemaining > 0 && (
+                  <div className="text-[10px] text-emerald-600 mt-1">
+                    Crédito a favor: S/ {quote.proration.creditRemaining.toFixed(2)}
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground mt-2">
+                  A partir del próximo ciclo: S/ {quote.targetPlan.price.toFixed(2)}/mes
+                </div>
+              </div>
+
+              {/* Explicación */}
+              <div className="rounded-lg bg-muted/50 border border-border p-3 text-xs text-muted-foreground">
+                {quote.proration.explanation}
+              </div>
+
+              {/* Footer */}
+              <DialogFooter className="gap-2 flex-col sm:flex-row">
+                <Button
+                  variant="outline"
+                  onClick={() => setQuote(null)}
+                  className="w-full sm:w-auto"
+                  disabled={!!loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={confirmUpgrade}
+                  disabled={!!loading}
+                  className="w-full sm:w-auto bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]"
+                >
+                  {loading
+                    ? 'Procesando...'
+                    : `Confirmar upgrade · S/ ${quote.proration.amountDue.toFixed(2)}`}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
   );
 }

@@ -49,11 +49,19 @@ export async function GET() {
     }),
     db.clinic.count({ where: { ownerId: user.id } }),
     db.clinicMember.count({ where: { clinicId } }),
-    // WhatsApp: contamos appointments con reminder enviado este mes.
-    // Mientras no exista el campo reminderSentAt en el schema, usamos 0.
-    // TODO: agregar campo `reminder_sent_at` a Appointment para tracking real.
-    Promise.resolve(0),
-    // Storage: sumar fileSize de todos los archivos del clinic
+    // WhatsApp: contamos AuditLog entries con action='WHATSAPP_REMINDER_SENT' este mes.
+    // Cada vez que se envía un recordatorio (vía /api/appointments/[id]/send-reminder)
+    // se inserta un AuditLog, que es el contador canónico del plan.
+    db.auditLog.count({
+      where: {
+        clinicId,
+        action: 'WHATSAPP_REMINDER_SENT',
+        createdAt: { gte: startOfMonth, lte: endOfMonth },
+      },
+    }),
+    // Storage: sumar fileSize de todos los PatientFile del clinic.
+    // Es solo un aggregate SQL — NO es un servicio externo, no tiene costo adicional.
+    // Supabase free tier incluye 1GB storage que cubre todos los plan tiers.
     db.patientFile.aggregate({
       where: { clinicId },
       _sum: { fileSize: true },

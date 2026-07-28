@@ -3,5 +3,11 @@
   "framework": "nextjs",
   "buildCommand": "bun run build",
   "installCommand": "bun install",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/process-expirations",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }

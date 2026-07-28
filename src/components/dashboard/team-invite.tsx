@@ -67,10 +67,20 @@ export function TeamInvite({ members }: Props) {
         toast.error(data.error || 'Error al invitar');
         return;
       }
-      toast.success(`Invitación enviada a ${form.email}`);
+      // Si el email fue enviado por Supabase → toast success.
+      // Si no → toast warning explicando que quedó pendiente.
+      if (data.invite?.sent) {
+        toast.success(`Invitación enviada a ${form.email}`, {
+          description: 'El invitado recibirá un email con un magic link para registrarse.',
+        });
+      } else {
+        toast.warning(`Invitación registrada para ${form.email}`, {
+          description: data.invite?.warning || 'No se pudo enviar el email. Revisa SUPABASE_SERVICE_ROLE_KEY.',
+        });
+      }
       setOpen(false);
       setForm({ email: '', fullName: '', role: 'doctor' });
-      setTimeout(() => window.location.reload(), 800);
+      setTimeout(() => window.location.reload(), 1200);
     } catch {
       toast.error('Error de conexión');
     } finally {
