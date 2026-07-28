@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser, getActiveClinicId } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { getPlan } from '@/lib/plans';
+import { getPlan, isPlanAtLeast } from '@/lib/plans';
 import { EquipoClient } from './equipo-client';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,8 @@ export default async function EquipoPage() {
 
   const plan = getPlan(user.plan);
 
-  if (!plan.limits.hasAdvancedReports) {
+  // Equipo requiere plan Pro o superior (Free: maxUsers=1, solo el owner)
+  if (!isPlanAtLeast(plan.id, 'pro')) {
     return (
       <EquipoClient
         user={{ email: user.email, name: user.fullName }}

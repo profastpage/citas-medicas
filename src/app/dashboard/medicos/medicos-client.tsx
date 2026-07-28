@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Stethoscope, Plus, Phone, Mail, Award, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
-import { PlanUsageBadge, PlanLimitBanner } from '@/components/dashboard/plan-usage-badge';
+import { PlanUsageBadge, PlanLimitBanner, usePlanUsage } from '@/components/dashboard/plan-usage-badge';
 
 interface Doctor {
   id: string;
@@ -42,6 +42,8 @@ export function MedicosClient(props: Props) {
   const { user, plan, clinicName, isSuperAdmin, specialties, doctors } = props;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { atLimit } = usePlanUsage();
+  const doctorsAtLimit = atLimit('doctors');
   const [form, setForm] = useState({
     fullName: '',
     specialtyId: '',
@@ -99,7 +101,11 @@ export function MedicosClient(props: Props) {
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]">
+              <Button
+                disabled={doctorsAtLimit}
+                title={doctorsAtLimit ? 'Límite de médicos alcanzado. Mejora tu plan.' : 'Nuevo médico'}
+                className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo médico
               </Button>

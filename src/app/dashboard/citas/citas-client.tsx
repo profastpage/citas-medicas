@@ -14,7 +14,7 @@ import { Calendar, Plus, Search, Clock, User, Stethoscope, ChevronLeft, ChevronR
 import { toast } from 'sonner';
 import { addDays, format, isSameDay, startOfDay, addMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PlanUsageBadge, PlanLimitBanner } from '@/components/dashboard/plan-usage-badge';
+import { PlanUsageBadge, PlanLimitBanner, usePlanUsage } from '@/components/dashboard/plan-usage-badge';
 
 interface Props {
   user: { email: string; name: string };
@@ -61,6 +61,8 @@ export function CitasClient(props: Props) {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
+  const { atLimit } = usePlanUsage();
+  const appointmentsAtLimit = atLimit('appointments');
 
   // Form state
   const [form, setForm] = useState({
@@ -176,7 +178,11 @@ export function CitasClient(props: Props) {
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]">
+              <Button
+                disabled={appointmentsAtLimit}
+                title={appointmentsAtLimit ? 'Límite de citas del mes alcanzado. Mejora tu plan.' : 'Nueva cita'}
+                className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva cita
               </Button>

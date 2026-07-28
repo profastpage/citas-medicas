@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Crown, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Crown, AlertTriangle, TrendingUp, Clock } from 'lucide-react';
 
 interface UsageData {
   current: number;
@@ -12,6 +12,7 @@ interface UsageData {
   unlimited: boolean;
   atLimit: boolean;
   nearLimit: boolean;
+  currentLabel?: string;
 }
 
 interface ApiResponse {
@@ -22,14 +23,24 @@ interface ApiResponse {
     appointments: UsageData;
     clinics: UsageData;
     team: UsageData;
+    whatsapp: UsageData;
+    storage: UsageData;
   };
   features: Record<string, boolean>;
+  expiry: {
+    currentPeriodEnd: string;
+    daysRemaining: number;
+    isExpiringSoon: boolean;
+    isExpired: boolean;
+  } | null;
+  clinics: Array<{ id: string; name: string; slug: string; createdAt: string }>;
+  activeClinicId: string;
 }
 
 type UsageKey = keyof ApiResponse['usage'];
 
 interface Props {
-  /** Recurso a mostrar: patients | doctors | appointments | clinics | team */
+  /** Recurso a mostrar: patients | doctors | appointments | clinics | team | whatsapp | storage */
   resource: UsageKey;
   /** Etiqueta legible: "Pacientes", "Médicos", "Citas este mes", etc. */
   label: string;
@@ -37,6 +48,8 @@ interface Props {
   variant?: 'compact' | 'full';
   /** Refrescar después de X segundos (default: 0 = no auto-refresh) */
   refreshIntervalMs?: number;
+  /** Texto personalizado para el recurso (ej: "5.2 MB / 10 MB") — solo si el current no es un número simple */
+  formatCurrent?: (current: number) => string;
 }
 
 /**
@@ -46,6 +59,7 @@ interface Props {
  * @example
  * <PlanUsageBadge resource="patients" label="Pacientes" />
  * <PlanUsageBadge resource="appointments" label="Citas este mes" variant="compact" />
+ * <PlanUsageBadge resource="storage" label="Almacenamiento" />
  */
 export function PlanUsageBadge({
   resource,
@@ -96,6 +110,10 @@ export function PlanUsageBadge({
   const u = data.usage[resource];
   if (!u) return null;
 
+  // Display value: si tiene currentLabel (storage), úsalo; si no, el número
+  const currentDisplay = u.currentLabel ?? String(u.current);
+  const limitDisplay = u.limitLabel;
+
   // Ilimitado: chip verde sutil
   if (u.unlimited) {
     return (
@@ -105,7 +123,7 @@ export function PlanUsageBadge({
         } bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20`}
       >
         <span className="opacity-70">{label}:</span>
-        <span className="font-bold">{u.current}</span>
+        <span className="font-bold">{currentDisplay}</span>
         <span className="opacity-60">/ ∞</span>
       </div>
     );
@@ -140,9 +158,9 @@ export function PlanUsageBadge({
           {u.nearLimit && !u.atLimit && <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />}
         </div>
         <div className="flex items-baseline gap-1 text-sm font-bold whitespace-nowrap">
-          <span>{u.current}</span>
+          <span>{currentDisplay}</span>
           <span className="opacity-50">/</span>
-          <span>{u.limitLabel}</span>
+          <span>{limitDisplay}</span>
         </div>
       </div>
 
@@ -213,7 +231,7 @@ export function PlanLimitBanner({ resource, label }: { resource: UsageKey; label
           Has alcanzado el límite de {label.toLowerCase()} del plan {data.plan.name}
         </h3>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          Estás usando <strong>{u.current}</strong> de <strong>{u.limitLabel}</strong>.{' '}
+          Estás usando <strong>{u.currentLabel ?? u.current}</strong> de <strong>{u.limitLabel}</strong>.{' '}
           Recomendamos mejorar tu plan para máximos beneficios y seguir creciendo sin interrupciones.
         </p>
       </div>
@@ -226,4 +244,124 @@ export function PlanLimitBanner({ resource, label }: { resource: UsageKey; label
       </Link>
     </div>
   );
+}
+
+/**
+ * Hook reutilizable para obtener el estado de uso del plan.
+ * Útil para deshabilitar botones de "Nuevo X" cuando se está al límite.
+ *
+ * @example
+ * const { usage, atLimit } = usePlanUsage();
+ * <Button disabled={atLimit('patients')}>Nuevo paciente</Button>
+ */
+export function usePlanUsage() {
+  const [data, setData] = useState<ApiResponse | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = () => {
+      fetch('/api/plan-usage', { cache: 'no-store' })
+        .then(r => mounted && r.json())
+        .then(json => mounted && setData(json))
+        .catch(() => {});
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const atLimit = (resource: UsageKey): boolean => {
+    if (!data) return false;
+    const u = data.usage[resource];
+    return u ? u.atLimit : false;
+  };
+
+  const isFeatureLocked = (feature: string): boolean => {
+    if (!data) return false;
+    return !data.features[feature];
+  };
+
+  return {
+    data,
+    usage: data?.usage,
+    expiry: data?.expiry,
+    atLimit,
+    isFeatureLocked,
+    plan: data?.plan,
+  };
+}
+
+/**
+ * Banner que avisa cuando el plan está por expirar (≤7 días).
+ * Se muestra en el dashboard principal.
+ */
+export function PlanExpiryBanner() {
+  const [data, setData] = useState<ApiResponse | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/plan-usage', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(json => mounted && setData(json))
+      .catch(() => mounted && setData(null));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!data?.expiry || data.plan.id === 'free') return null;
+  const e = data.expiry;
+
+  if (e.isExpired) {
+    return (
+      <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center flex-shrink-0">
+          <Clock className="w-6 h-6 text-red-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-sm sm:text-base text-red-700 dark:text-red-400">
+            Tu suscripción al plan {data.plan.name} ha expirado
+          </h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Renueva ahora para recuperar acceso a todas las funciones. Mientras tanto, tu cuenta opera en modo Free.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/billing"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition whitespace-nowrap w-full sm:w-auto"
+        >
+          Renovar ahora
+        </Link>
+      </div>
+    );
+  }
+
+  if (e.isExpiringSoon) {
+    return (
+      <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
+          <Clock className="w-6 h-6 text-amber-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-sm sm:text-base text-amber-700 dark:text-amber-400">
+            Tu plan {data.plan.name} expira en {e.daysRemaining} {e.daysRemaining === 1 ? 'día' : 'días'}
+          </h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Renueva antes del{' '}
+            <strong>{new Date(e.currentPeriodEnd).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>{' '}
+            para mantener todas las funciones activas.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/billing"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition whitespace-nowrap w-full sm:w-auto"
+        >
+          Renovar
+        </Link>
+      </div>
+    );
+  }
+
+  return null;
 }

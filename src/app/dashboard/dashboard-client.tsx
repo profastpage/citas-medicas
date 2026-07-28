@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { PlanUsageBadge } from '@/components/dashboard/plan-usage-badge';
+import { PlanUsageBadge, PlanExpiryBanner } from '@/components/dashboard/plan-usage-badge';
 
 interface Props {
   user: { email: string; name: string };
@@ -66,6 +66,9 @@ export function DashboardClient({
       isSuperAdmin={isSuperAdmin}
     >
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Banner de expiración del plan (si está por vencer) */}
+        <PlanExpiryBanner />
+
         {/* Header */}
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
@@ -77,12 +80,19 @@ export function DashboardClient({
         </div>
 
         {/* Plan usage summary — muestra límites por plan automáticamente */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
-          <PlanUsageBadge resource="appointments" label="Citas / mes" />
-          <PlanUsageBadge resource="patients" label="Pacientes" />
-          <PlanUsageBadge resource="doctors" label="Médicos" />
-          <PlanUsageBadge resource="team" label="Equipo" />
-          <PlanUsageBadge resource="clinics" label="Sucursales" />
+        <div className="space-y-3">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Uso de tu plan {plan.name}
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
+            <PlanUsageBadge resource="appointments" label="Citas / mes" />
+            <PlanUsageBadge resource="patients" label="Pacientes" />
+            <PlanUsageBadge resource="doctors" label="Médicos" />
+            <PlanUsageBadge resource="team" label="Equipo" />
+            <PlanUsageBadge resource="clinics" label="Sucursales" />
+            <PlanUsageBadge resource="whatsapp" label="WhatsApp / mes" />
+            <PlanUsageBadge resource="storage" label="Almacenamiento" />
+          </div>
         </div>
 
         {/* Stats grid */}

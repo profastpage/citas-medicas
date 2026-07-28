@@ -14,7 +14,7 @@ import { Users, Plus, Search, Phone, Mail, Calendar, Droplet, AlertTriangle, Fil
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PlanUsageBadge, PlanLimitBanner } from '@/components/dashboard/plan-usage-badge';
+import { PlanUsageBadge, PlanLimitBanner, usePlanUsage } from '@/components/dashboard/plan-usage-badge';
 
 interface Patient {
   id: string;
@@ -55,6 +55,8 @@ export function PacientesClient(props: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<Patient | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const { atLimit } = usePlanUsage();
+  const patientsAtLimit = atLimit('patients');
 
   const [form, setForm] = useState({
     firstName: '',
@@ -142,7 +144,11 @@ export function PacientesClient(props: Props) {
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]">
+              <Button
+                disabled={patientsAtLimit}
+                title={patientsAtLimit ? 'Límite de pacientes alcanzado. Mejora tu plan.' : 'Nuevo paciente'}
+                className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb]"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo paciente
               </Button>

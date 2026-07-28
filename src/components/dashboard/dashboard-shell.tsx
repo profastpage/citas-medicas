@@ -50,7 +50,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3, premium: true },
   { href: '/dashboard/auditoria', label: 'Auditoría', icon: Shield, pro: true },
   { href: '/dashboard/clinica', label: 'Clínica', icon: Building2 },
-  { href: '/dashboard/equipo', label: 'Equipo', icon: UserCog, premium: true },
+  { href: '/dashboard/equipo', label: 'Equipo', icon: UserCog, pro: true },
   { href: '/dashboard/billing', label: 'Planes', icon: CreditCard },
 ];
 

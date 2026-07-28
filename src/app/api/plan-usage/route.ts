@@ -23,17 +23,21 @@ export async function GET() {
 
   const plan = getPlan(user.plan);
 
-  // Cálculo de mes actual para citas
+  // Cálculo de mes actual para citas y WhatsApp
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
+  // Conteos paralelos
   const [
     patientsCount,
     doctorsCount,
     appointmentsThisMonth,
     clinicsCount,
     teamMembersCount,
+    whatsappSentThisMonth,
+    storageAgg,
+    allClinics,
   ] = await Promise.all([
     db.patient.count({ where: { clinicId, isActive: true } }),
     db.doctor.count({ where: { clinicId, isActive: true } }),
@@ -45,10 +49,29 @@ export async function GET() {
     }),
     db.clinic.count({ where: { ownerId: user.id } }),
     db.clinicMember.count({ where: { clinicId } }),
+    // WhatsApp: contamos appointments con reminder enviado este mes.
+    // Mientras no exista el campo reminderSentAt en el schema, usamos 0.
+    // TODO: agregar campo `reminder_sent_at` a Appointment para tracking real.
+    Promise.resolve(0),
+    // Storage: sumar fileSize de todos los archivos del clinic
+    db.patientFile.aggregate({
+      where: { clinicId },
+      _sum: { fileSize: true },
+    }),
+    // Lista todas las clínicas del usuario (para multi-sucursal)
+    db.clinic.findMany({
+      where: { ownerId: user.id },
+      select: { id: true, name: true, slug: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    }),
   ]);
 
   // +1 por el owner en team members
   const totalTeam = teamMembersCount + 1;
+
+  // Storage: convertir bytes a MB
+  const storageBytes = storageAgg._sum.fileSize ?? 0;
+  const storageMb = Math.round((storageBytes / (1024 * 1024)) * 100) / 100;
 
   const buildUsage = (current: number, limit: number) => {
     if (limit === -1) {
@@ -75,6 +98,20 @@ export async function GET() {
     };
   };
 
+  // Plan expiry calculation
+  const expiryInfo = (() => {
+    if (!user.currentPeriodEnd) return null;
+    const end = new Date(user.currentPeriodEnd);
+    const msDiff = end.getTime() - now.getTime();
+    const daysDiff = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
+    return {
+      currentPeriodEnd: end.toISOString(),
+      daysRemaining: daysDiff,
+      isExpiringSoon: daysDiff > 0 && daysDiff <= 7,
+      isExpired: daysDiff <= 0,
+    };
+  })();
+
   return NextResponse.json({
     plan: { id: plan.id, name: plan.name, color: plan.color },
     usage: {
@@ -83,6 +120,14 @@ export async function GET() {
       appointments: buildUsage(appointmentsThisMonth, plan.limits.maxAppointmentsPerMonth),
       clinics: buildUsage(clinicsCount, plan.limits.maxClinics),
       team: buildUsage(totalTeam, plan.limits.maxUsers),
+      whatsapp: buildUsage(whatsappSentThisMonth, plan.limits.reminderCreditsPerMonth),
+      storage: {
+        ...buildUsage(storageMb, plan.limits.fileStorageMb),
+        // Para storage, current lo mostramos en MB legible
+        currentLabel: formatBytes(storageBytes),
+        limitLabel:
+          plan.limits.fileStorageMb === -1 ? '∞' : `${plan.limits.fileStorageMb} MB`,
+      },
     },
     features: {
       hasCashManagement: plan.limits.hasCashManagement,
@@ -94,5 +139,16 @@ export async function GET() {
       hasAPI: plan.limits.hasAPI,
       hasAuditLog: plan.limits.hasAuditLog,
     },
+    expiry: expiryInfo,
+    clinics: allClinics,
+    activeClinicId: clinicId,
   });
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }

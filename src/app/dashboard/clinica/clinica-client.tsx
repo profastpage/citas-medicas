@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Building2, Save, Plus, Trash2, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { PlanUsageBadge } from '@/components/dashboard/plan-usage-badge';
+import { ClinicSwitcher } from '@/components/dashboard/clinic-switcher';
 
 interface Props {
   user: { email: string; name: string };
@@ -29,10 +30,22 @@ interface Props {
     logoUrl: string;
   };
   specialties: Array<{ id: string; name: string }>;
+  allClinics?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    ruc?: string | null;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    createdAt: string;
+    _count?: { patients: number; doctors: number; appointments: number };
+  }>;
+  canCreateMore?: boolean;
 }
 
 export function ClinicaClient(props: Props) {
-  const { user, plan, isSuperAdmin, clinic } = props;
+  const { user, plan, isSuperAdmin, clinic, allClinics = [], canCreateMore = true } = props;
   const [form, setForm] = useState(clinic);
   const [saving, setSaving] = useState(false);
   const [specialties, setSpecialties] = useState(props.specialties);
@@ -90,6 +103,15 @@ export function ClinicaClient(props: Props) {
           </p>
           <PlanUsageBadge resource="clinics" label="Sucursales" />
         </div>
+
+        {/* Multi-sucursal UI — solo si el plan soporta multi-branch */}
+        {allClinics.length > 0 && (
+          <ClinicSwitcher
+            clinics={allClinics}
+            activeClinicId={clinic.id}
+            canCreateMore={canCreateMore}
+          />
+        )}
 
         {/* Datos generales */}
         <div className="bg-muted/50 border border-border rounded-2xl p-6 space-y-4">

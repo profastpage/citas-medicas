@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PlanUsageBadge } from '@/components/dashboard/plan-usage-badge';
+import { TeamInvite } from '@/components/dashboard/team-invite';
 
 interface Member {
   id: string;
@@ -40,20 +41,20 @@ export function EquipoClient(props: Props) {
   if (locked) {
     return (
       <DashboardShell user={user} plan={plan} clinicName={clinicName} isSuperAdmin={isSuperAdmin}>
-        <div className="p-6 lg:p-8 flex items-center justify-center min-h-[60vh]">
+        <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[60vh]">
           <div className="max-w-md text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto">
               <Lock className="w-8 h-8 text-amber-400" />
             </div>
-            <h2 className="text-2xl font-bold">Gestión de equipo es una función Premium</h2>
+            <h2 className="text-2xl font-bold">Gestión de equipo es una función Pro</h2>
             <p className="text-muted-foreground">
               Invita médicos, recepcionistas y administradores con roles diferenciados.
-              Disponible desde el plan Premium (S/ 99/mes).
+              Disponible desde el plan Pro (S/ 50/mes) con hasta 3 usuarios.
             </p>
             <Link href="/dashboard/billing">
               <button className="bg-gradient-to-r from-[#0ea5e9] to-[#2563eb] text-white px-6 py-2 rounded-lg font-medium hover:opacity-90">
                 <Crown className="w-4 h-4 inline mr-2" />
-                Mejorar a Premium
+                Mejorar a Pro
               </button>
             </Link>
           </div>
@@ -108,13 +109,15 @@ export function EquipoClient(props: Props) {
           )}
         </div>
 
-        <div className="bg-muted/50 border border-border rounded-2xl p-6">
-          <h3 className="font-bold mb-2">Invitar miembro</h3>
-          <p className="text-sm text-muted-foreground/70">
-            Próximamente: invitar por email a tu equipo con roles personalizados.
-            Por ahora, los miembros se agregan vía API o base de datos.
-          </p>
-        </div>
+        {/* Reemplazo del bloque "Próximamente" por TeamInvite real */}
+        <TeamInvite members={members.map(m => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role,
+          invitedAt: m.invitedAt,
+          acceptedAt: m.acceptedAt,
+        }))} />
       </div>
     </DashboardShell>
   );
