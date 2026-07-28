@@ -60,6 +60,10 @@ export async function POST(req: NextRequest) {
 
     const profile = user ?? (await db.user.findUnique({ where: { supabaseUid: data.user.id } }));
 
+    // Super admin redirect hint: if the user is super_admin, the client
+    // should send them to /superadmin instead of /dashboard.
+    const dest = profile?.role === 'super_admin' ? '/superadmin' : '/dashboard';
+
     return NextResponse.json({
       ok: true,
       user: {
@@ -69,6 +73,7 @@ export async function POST(req: NextRequest) {
         role: profile?.role,
         plan: profile?.plan,
       },
+      redirectTo: dest,
     });
   } catch (err) {
     console.error('[login]', err);

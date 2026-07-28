@@ -13,31 +13,44 @@ export default async function SuperadminPage() {
   const [users, clinics, totalStats] = await Promise.all([
     db.user.findMany({
       orderBy: { createdAt: 'desc' },
-      take: 100,
-      include: { ownedClinics: { select: { id: true, name: true } } },
+      include: {
+        ownedClinics: {
+          select: {
+            id: true, name: true, slug: true,
+            _count: { select: { patients: true, appointments: true, doctors: true } },
+          },
+        },
+      },
     }),
     db.clinic.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { _count: { select: { patients: true, appointments: true, doctors: true } } },
+      include: {
+        owner: { select: { id: true, email: true, fullName: true, plan: true } },
+        _count: { select: { patients: true, appointments: true, doctors: true } },
+      },
     }),
     Promise.all([
       db.user.count(),
       db.clinic.count(),
       db.appointment.count(),
       db.payment.aggregate({ _sum: { amount: true } }),
-    ]).then(([u, c, a, p]) => ({
+      db.user.count({ where: { isActive: true } }),
+      db.user.count({ where: { plan: { not: 'free' } } }),
+    ]).then(([u, c, a, p, active, paying]) => ({
       totalUsers: u,
       totalClinics: c,
       totalAppointments: a,
       totalRevenue: p._sum.amount ?? 0,
+      activeUsers: active,
+      payingUsers: paying,
     })),
   ]);
 
   return (
     <SuperadminClient
       user={{ email: user.email, name: user.fullName }}
-      stats={totalStats}
-      users={users.map(u => ({
+      initialStats={totalStats}
+      initialUsers={users.map(u => ({
         id: u.id,
         email: u.email,
         fullName: u.fullName,
@@ -46,18 +59,33 @@ export default async function SuperadminPage() {
         mpStatus: u.mpStatus,
         isActive: u.isActive,
         createdAt: u.createdAt.toISOString(),
-        clinics: u.ownedClinics.map(c => c.name),
+        supabaseUid: u.supabaseUid,
+        clinics: u.ownedClinics.map(c => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          patients: c._count.patients,
+          appointments: c._count.appointments,
+          doctors: c._count.doctors,
+        })),
       }))}
-      clinics={clinics.map(c => ({
+      initialClinics={clinics.map(c => ({
         id: c.id,
         name: c.name,
         slug: c.slug,
-        ownerEmail: users.find(u => u.ownedClinics.some(oc => oc.id === c.id))?.email ?? '—',
-        plan: users.find(u => u.ownedClinics.some(oc => oc.id === c.id))?.plan ?? 'free',
+        currency: c.currency,
+        themeColor: c.themeColor,
+        isWhiteLabel: c.isWhiteLabel,
+        createdAt: c.createdAt.toISOString(),
+        owner: c.owner ? {
+          id: c.owner.id,
+          email: c.owner.email,
+          fullName: c.owner.fullName,
+          plan: c.owner.plan,
+        } : null,
         patients: c._count.patients,
         appointments: c._count.appointments,
         doctors: c._count.doctors,
-        createdAt: c.createdAt.toISOString(),
       }))}
     />
   );
