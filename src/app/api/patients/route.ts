@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getActiveClinicId } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { z } from 'zod';
+import { assertCanAddPatient } from '@/lib/plan-limits';
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -55,6 +56,11 @@ export async function POST(req: NextRequest) {
   }
 
   const data = parsed.data;
+
+  // Enforce plan limit
+  const limitErr = await assertCanAddPatient(user.plan, clinicId);
+  if (limitErr) return limitErr;
+
   const patient = await db.patient.create({
     data: {
       ...data,

@@ -2,6 +2,19 @@
 // CitasPro SaaS — Planes de suscripción
 // Adaptado del modelo de MenuPro pero con límites del dominio médico
 // ============================================================
+// FILOSOFÍA DE LÍMITES (v2 — 2026-07-28):
+//   Free    = prueba literal. 5 citas/mes, 5 pacientes. 1 médico. 1 usuario.
+//              Quiere usar más? Pagar. Sin caja, sin inventario, sin WhatsApp.
+//   Pro     = consultorio en crecimiento. 20 citas/mes. 3 médicos. Caja + inventario.
+//   Premium = clínica seria. 50 citas/mes. 10 médicos. Multi-sucursal + white label.
+//   Full    = ilimitado. Para redes de clínicas.
+// Los límites se ENFUERZAN en:
+//   - src/app/api/appointments/route.ts (POST crea cita → check maxAppointmentsPerMonth)
+//   - src/app/api/patients/route.ts     (POST crea paciente → check maxPatients)
+//   - src/app/api/doctors/route.ts      (POST crea médico → check maxDoctors)
+//   - src/app/api/clinics/route.ts      (POST crea sucursal → check maxClinics)
+//   - src/app/api/auth/register/route.ts(clínica inicial respeta maxClinics=1)
+// ============================================================
 
 export type PlanId = 'free' | 'pro' | 'premium' | 'full';
 
@@ -47,15 +60,15 @@ export const PLANS: Record<PlanId, Plan> = {
   free: {
     id: 'free',
     name: 'Free',
-    tagline: 'Para consultorios que arrancan',
+    tagline: 'Prueba literal — 5 citas al mes',
     priceMonthly: 0,
     priceUsd: 0,
-    color: '#6b7280',
-    upgradeHint: 'Pasa a Pro (S/ 50/mes) para tener 3 médicos, recordatorios WhatsApp y reportes.',
+    color: '#64748b',
+    upgradeHint: 'Solo 5 citas/mes y 5 pacientes. Pasa a Pro (S/ 50/mes) para 20 citas, caja, inventario y WhatsApp.',
     limits: {
       maxDoctors: 1,
-      maxPatients: 50,
-      maxAppointmentsPerMonth: 100,
+      maxPatients: 5,
+      maxAppointmentsPerMonth: 5,
       maxClinics: 1,
       maxUsers: 1,
       hasAppointmentCalendar: true,
@@ -74,35 +87,35 @@ export const PLANS: Record<PlanId, Plan> = {
       hasInterconsults: false,
       hasPdfExport: false,
       reminderCreditsPerMonth: 0,
-      fileStorageMb: 50,
+      fileStorageMb: 10,
     },
     features: [
       '1 médico',
-      'Hasta 50 pacientes',
-      'Hasta 100 citas al mes',
-      'Calendario de citas',
+      'Hasta 5 pacientes',
+      'Hasta 5 citas al mes',
+      'Calendario de citas básico',
       'Historia clínica básica',
-      'Marca "Gestionado con CitasPro"',
       '1 usuario',
+      'Marca "Gestionado con CitasPro"',
     ],
   },
 
   pro: {
     id: 'pro',
     name: 'Pro',
-    tagline: 'Para clínicas en crecimiento',
+    tagline: 'Para consultorios en crecimiento',
     priceMonthly: 50,
     priceUsd: 13,
     mpAmount: 50,
-    color: '#d4af37',
+    color: '#0ea5e9',
     badge: 'POPULAR',
     highlight: true,
     upgradeHint:
-      'Pasa a Premium (S/ 99/mes) para tener 10 médicos, multi-sucursal y white label.',
+      '20 citas/mes. Pasa a Premium (S/ 99/mes) para 50 citas, multi-sucursal y white label.',
     limits: {
       maxDoctors: 3,
       maxPatients: -1,
-      maxAppointmentsPerMonth: -1,
+      maxAppointmentsPerMonth: 20,
       maxClinics: 1,
       maxUsers: 3,
       hasAppointmentCalendar: true,
@@ -126,15 +139,14 @@ export const PLANS: Record<PlanId, Plan> = {
     features: [
       'Todo lo de Free',
       '3 médicos',
-      'Pacientes y citas ilimitadas',
+      'Pacientes ilimitados',
+      'Hasta 20 citas al mes',
       'Gestión de caja y pagos',
       'Inventario de medicamentos',
       'Recordatorios WhatsApp (200/mes)',
       'Recordatorios por email',
       'Interconsultas',
       'Auditoría de cambios',
-      'Subida de archivos (1 GB)',
-      'Exportar a PDF',
       '3 usuarios del equipo',
     ],
   },
@@ -149,11 +161,11 @@ export const PLANS: Record<PlanId, Plan> = {
     color: '#9d4edd',
     badge: 'PREMIUM',
     upgradeHint:
-      'Pasa a Full (S/ 199/mes) para usuarios ilimitados, API y reportes avanzados.',
+      '50 citas/mes. Pasa a Full (S/ 199/mes) para citas y usuarios ilimitados + API.',
     limits: {
       maxDoctors: 10,
       maxPatients: -1,
-      maxAppointmentsPerMonth: -1,
+      maxAppointmentsPerMonth: 50,
       maxClinics: 3,
       maxUsers: 10,
       hasAppointmentCalendar: true,
@@ -177,6 +189,7 @@ export const PLANS: Record<PlanId, Plan> = {
     features: [
       'Todo lo de Pro',
       '10 médicos',
+      'Hasta 50 citas al mes',
       'Multi-sucursal (3 clínicas)',
       'White label — sin marca CitasPro',
       'Reportes avanzados con gráficos',
@@ -190,7 +203,7 @@ export const PLANS: Record<PlanId, Plan> = {
   full: {
     id: 'full',
     name: 'Full',
-    tagline: 'Multi-sucursal ilimitada + API',
+    tagline: 'Ilimitado + API',
     priceMonthly: 199,
     priceUsd: 52,
     mpAmount: 199,
@@ -222,7 +235,7 @@ export const PLANS: Record<PlanId, Plan> = {
     },
     features: [
       'Todo lo de Premium',
-      'Médicos ilimitados',
+      'Citas y médicos ilimitados',
       'Sucursales ilimitadas',
       'Usuarios ilimitados',
       'API externa',
@@ -259,9 +272,9 @@ export const LIMIT_COMPARISON: Array<{
   icon: string;
   values: [string, string, string, string];
 }> = [
+  { label: 'Citas por mes', icon: '📅', values: ['5', '20', '50', '∞'] },
+  { label: 'Pacientes', icon: '🧑‍🤝‍🧑', values: ['5', '∞', '∞', '∞'] },
   { label: 'Médicos', icon: '👨‍⚕️', values: ['1', '3', '10', '∞'] },
-  { label: 'Pacientes', icon: '🧑‍🤝‍🧑', values: ['50', '∞', '∞', '∞'] },
-  { label: 'Citas por mes', icon: '📅', values: ['100', '∞', '∞', '∞'] },
   { label: 'Sucursales', icon: '🏬', values: ['1', '1', '3', '∞'] },
   { label: 'Usuarios', icon: '👥', values: ['1', '3', '10', '∞'] },
   { label: 'Recordatorios WhatsApp', icon: '💬', values: ['—', '200', '1000', '∞'] },
